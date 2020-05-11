@@ -23,8 +23,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
       - name: Build
-          sudo rm -r ndk/
-          sudo rm -r ndk-bundle/
         run: |
           ./gradlew assemble
       - name: Upload firmware
