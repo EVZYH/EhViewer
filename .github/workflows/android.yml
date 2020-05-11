@@ -2,8 +2,8 @@ name: Android CI
 
 on: 
   push:
-#    branches:
-#    - master
+    branches:
+    - 0.x
 
 jobs:
   build:
