@@ -2,8 +2,8 @@ name: Android CI
 
 on: 
   push:
-    branches:
-    - master
+#    branches:
+#    - master
 
 jobs:
   build:
@@ -25,7 +25,7 @@ jobs:
       - name: Build
         run: |
           ./gradlew assemble
-      - name: Upload firmware
+      - name: Upload apk
         uses: actions/upload-artifact@master
         with:
           name: EhViewer
