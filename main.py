@@ -12,7 +12,7 @@ import hashlib
 from bs4 import BeautifulSoup
 
 TRANSLATION_PATCH = {
-    'l:chinese': '汉语'
+    # 'l:chinese': '汉语'
 }
 
 def removeEmojis(x):
@@ -33,7 +33,7 @@ def parseMarkdownFile(path, prefix):
     for tr in soup.find_all('tr'):
         tds = [x for x in tr.find_all('td')]
         if len(tds) == 4:
-            x = ''.join(tds[0].strings).strip().replace('\u200e', '')
+            x = ''.join(tds[0].strings).strip()
             y = ''.join(tds[1].strings).strip()
             y = removeEmojis(y)
             if len(x) != 0 and len(y) != 0:
@@ -84,7 +84,7 @@ def saveTags(path, tags):
         f.write(sha1(path))
 
 def downloadMarkdownFiles():
-    if os.system('git clone https://github.com/Mapaler/EhTagTranslator.wiki.git --depth=1'):
+    if os.system('git clone https://github.com/EhTagTranslation/Database.git --depth=1'):
         raise ValueError('Failed to git clone')
 
 def rmtree(path):
@@ -98,10 +98,10 @@ def rmtree(path):
     os.rmdir(path)
 
 def removeMarkdownFiles():
-    rmtree('EhTagTranslator.wiki')
+    rmtree('Database')
 
 if __name__ == "__main__":
-    if os.path.exists('EhTagTranslator.wiki'):
+    if os.path.exists('Database'):
         removeMarkdownFiles()
     downloadMarkdownFiles()
 
@@ -117,7 +117,7 @@ if __name__ == "__main__":
         ('parody.md', 'p'),
         ('reclass.md', 'r')
     )
-    tags = [x for f, p in files for x in parseMarkdownFile(os.path.join('EhTagTranslator.wiki', 'database', f), p)]
+    tags = [x for f, p in files for x in parseMarkdownFile(os.path.join('Database', 'database', f), p)]
     saveTags('tag-translations/tag-translations-zh-rCN', tags)
 
     removeMarkdownFiles()
