@@ -1,14 +1,15 @@
 name: Android CI
 
 on: 
- push:
+  push:
     branches:
     - master
 
 jobs:
-  linux:
-    name: Build
+  build:
+
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v2
       - name: set up JDK 1.8
