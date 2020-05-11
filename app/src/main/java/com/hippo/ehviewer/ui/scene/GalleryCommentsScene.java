@@ -21,11 +21,8 @@ import android.annotation.SuppressLint;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.res.Resources;
-import android.graphics.Color;
 import android.graphics.Typeface;
-import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Looper;
@@ -41,16 +38,20 @@ import android.text.style.URLSpan;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewAnimationUtils;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.hippo.android.resource.AttrResources;
 import com.hippo.easyrecyclerview.EasyRecyclerView;
@@ -66,8 +67,6 @@ import com.hippo.ehviewer.client.data.GalleryCommentList;
 import com.hippo.ehviewer.client.data.GalleryDetail;
 import com.hippo.ehviewer.client.parser.VoteCommentParser;
 import com.hippo.ehviewer.ui.MainActivity;
-import com.hippo.reveal.ViewAnimationUtils;
-import com.hippo.ripple.Ripple;
 import com.hippo.scene.SceneFragment;
 import com.hippo.text.Html;
 import com.hippo.text.URLImageGetter;
@@ -87,12 +86,12 @@ import com.hippo.yorozuya.SimpleAnimatorListener;
 import com.hippo.yorozuya.StringUtils;
 import com.hippo.yorozuya.ViewUtils;
 import com.hippo.yorozuya.collect.IntList;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public final class GalleryCommentsScene extends ToolbarScene
-        implements EasyRecyclerView.OnItemClickListener,
-        View.OnClickListener {
+        implements View.OnClickListener {
 
     public static final String TAG = GalleryCommentsScene.class.getSimpleName();
 
@@ -101,14 +100,15 @@ public final class GalleryCommentsScene extends ToolbarScene
     public static final String KEY_GID = "gid";
     public static final String KEY_TOKEN = "token";
     public static final String KEY_COMMENT_LIST = "comment_list";
-
+    private static final int TYPE_COMMENT = 0;
+    private static final int TYPE_MORE = 1;
+    private static final int TYPE_PROGRESS = 2;
     private long mApiUid;
     private String mApiKey;
     private long mGid;
     private String mToken;
     @Nullable
     private GalleryCommentList mCommentList;
-
     @Nullable
     private EasyRecyclerView mRecyclerView;
     @Nullable
@@ -125,13 +125,10 @@ public final class GalleryCommentsScene extends ToolbarScene
     private CommentAdapter mAdapter;
     @Nullable
     private ViewTransition mViewTransition;
-
     private Drawable mSendDrawable;
     private Drawable mPencilDrawable;
     private long mCommentId;
-
     private boolean mInAnimation = false;
-
     private boolean mShowAllComments = false;
     private boolean mRefreshingComments = false;
 
@@ -185,7 +182,7 @@ public final class GalleryCommentsScene extends ToolbarScene
     @Nullable
     @Override
     public View onCreateView3(LayoutInflater inflater,
-            @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+                              @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.scene_gallery_comments, container, false);
         mRecyclerView = (EasyRecyclerView) ViewUtils.$$(view, R.id.recycler_view);
         TextView tip = (TextView) ViewUtils.$$(view, R.id.tip);
@@ -216,9 +213,9 @@ public final class GalleryCommentsScene extends ToolbarScene
                 LayoutUtils.dp2pix(context, 1));
         decoration.setShowLastDivider(true);
         mRecyclerView.addItemDecoration(decoration);
-        mRecyclerView.setSelector(Ripple.generateRippleDrawable(context, !AttrResources.getAttrBoolean(context, R.attr.isLightTheme), new ColorDrawable(Color.TRANSPARENT)));
+        //mRecyclerView.setSelector(Ripple.generateRippleDrawable(context, !AttrResources.getAttrBoolean(context, R.attr.isLightTheme), new ColorDrawable(Color.TRANSPARENT)));
         mRecyclerView.setHasFixedSize(true);
-        mRecyclerView.setOnItemClickListener(this);
+        //mRecyclerView.setOnItemClickListener(this);
         mRecyclerView.setPadding(mRecyclerView.getPaddingLeft(), mRecyclerView.getPaddingTop(),
                 mRecyclerView.getPaddingRight(), mRecyclerView.getPaddingBottom() + paddingBottomFab);
         // Cancel change animator
@@ -291,18 +288,6 @@ public final class GalleryCommentsScene extends ToolbarScene
         EhApplication.getEhClient(context).execute(request);
     }
 
-    private class InfoHolder extends RecyclerView.ViewHolder {
-
-        private final TextView key;
-        private final TextView value;
-
-        public InfoHolder(View itemView) {
-            super(itemView);
-            key = (TextView) ViewUtils.$$(itemView, R.id.key);
-            value = (TextView) ViewUtils.$$(itemView, R.id.value);
-        }
-    }
-
     @SuppressLint("InflateParams")
     public void showVoteStatusDialog(Context context, String voteStatus) {
         String[] temp = StringUtils.split(voteStatus, ',');
@@ -322,7 +307,7 @@ public final class GalleryCommentsScene extends ToolbarScene
             }
         }
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        AlertDialog.Builder builder = new MaterialAlertDialogBuilder(context);
         context = builder.getContext();
         final LayoutInflater inflater = LayoutInflater.from(context);
         EasyRecyclerView rv = (EasyRecyclerView) inflater.inflate(R.layout.dialog_recycler_view, null);
@@ -349,7 +334,7 @@ public final class GalleryCommentsScene extends ToolbarScene
                 LayoutUtils.dp2pix(context, 1));
         decoration.setPadding(ResourcesUtils.getAttrDimensionPixelOffset(context, R.attr.dialogPreferredPadding));
         rv.addItemDecoration(decoration);
-        rv.setSelector(Ripple.generateRippleDrawable(context, !AttrResources.getAttrBoolean(context, R.attr.isLightTheme), new ColorDrawable(Color.TRANSPARENT)));
+        //rv.setSelector(Ripple.generateRippleDrawable(context, !AttrResources.getAttrBoolean(context, R.attr.isLightTheme), new ColorDrawable(Color.TRANSPARENT)));
         rv.setClipToPadding(false);
         builder.setView(rv).show();
     }
@@ -384,42 +369,38 @@ public final class GalleryCommentsScene extends ToolbarScene
             menuId.add(R.id.check_vote_status);
         }
 
-        new AlertDialog.Builder(context)
-                .setItems(menu.toArray(new String[menu.size()]), new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        if (which < 0 || which >= menuId.size()) {
-                           return;
-                        }
-                        int id = menuId.get(which);
-                        switch (id) {
-                            case R.id.copy:
-                                ClipboardManager cmb = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
-                                cmb.setPrimaryClip(ClipData.newPlainText(null, comment.comment));
-                                showTip(R.string.copied_to_clipboard, LENGTH_SHORT);
-                                break;
-                            case R.id.vote_up:
-                                voteComment(comment.id, 1);
-                                break;
-                            case R.id.vote_down:
-                                voteComment(comment.id, -1);
-                                break;
-                            case R.id.check_vote_status:
-                                showVoteStatusDialog(context, comment.voteState);
-                                break;
-                            case R.id.edit_comment:
-                                prepareEditComment(comment.id);
-                                if (!mInAnimation && mEditPanel != null && mEditPanel.getVisibility() != View.VISIBLE) {
-                                    showEditPanel(true);
-                                }
-                                break;
-                        }
+        new MaterialAlertDialogBuilder(context)
+                .setItems(menu.toArray(new String[menu.size()]), (dialog, which) -> {
+                    if (which < 0 || which >= menuId.size()) {
+                        return;
+                    }
+                    int id = menuId.get(which);
+                    switch (id) {
+                        case R.id.copy:
+                            ClipboardManager cmb = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+                            cmb.setPrimaryClip(ClipData.newPlainText(null, comment.comment));
+                            showTip(R.string.copied_to_clipboard, LENGTH_SHORT);
+                            break;
+                        case R.id.vote_up:
+                            voteComment(comment.id, 1);
+                            break;
+                        case R.id.vote_down:
+                            voteComment(comment.id, -1);
+                            break;
+                        case R.id.check_vote_status:
+                            showVoteStatusDialog(context, comment.voteState);
+                            break;
+                        case R.id.edit_comment:
+                            prepareEditComment(comment.id);
+                            if (!mInAnimation && mEditPanel != null && mEditPanel.getVisibility() != View.VISIBLE) {
+                                showEditPanel(true);
+                            }
+                            break;
                     }
                 }).show();
     }
 
-    @Override
-    public boolean onItemClick(EasyRecyclerView parent, View view, int position, long id) {
+    public boolean onItemClick(EasyRecyclerView parent, View view, int position) {
         MainActivity activity = getActivity2();
         if (null == activity) {
             return false;
@@ -445,9 +426,9 @@ public final class GalleryCommentsScene extends ToolbarScene
             if (url != null) {
                 // Request
                 EhRequest request = new EhRequest()
-                    .setMethod(EhClient.METHOD_GET_GALLERY_DETAIL)
-                    .setArgs(url)
-                    .setCallback(new RefreshCommentListener(activity, activity.getStageId(), getTag()));
+                        .setMethod(EhClient.METHOD_GET_GALLERY_DETAIL)
+                        .setArgs(url)
+                        .setCallback(new RefreshCommentListener(activity, activity.getStageId(), getTag()));
                 EhApplication.getEhClient(activity).execute(request);
             }
         }
@@ -649,132 +630,6 @@ public final class GalleryCommentsScene extends ToolbarScene
         }
     }
 
-    private static final int TYPE_COMMENT = 0;
-    private static final int TYPE_MORE = 1;
-    private static final int TYPE_PROGRESS = 2;
-
-    private abstract class CommentHolder extends RecyclerView.ViewHolder {
-        public CommentHolder(LayoutInflater inflater, int resId, ViewGroup parent) {
-            super(inflater.inflate(resId, parent, false));
-        }
-    }
-
-    private class ActualCommentHolder extends CommentHolder {
-
-        private final TextView user;
-        private final TextView time;
-        private final LinkifyTextView comment;
-
-        public ActualCommentHolder(LayoutInflater inflater, ViewGroup parent) {
-            super(inflater, R.layout.item_gallery_comment, parent);
-            user = itemView.findViewById(R.id.user);
-            time = itemView.findViewById(R.id.time);
-            comment = itemView.findViewById(R.id.comment);
-        }
-
-        private CharSequence generateComment(Context context, ObservedTextView textView, GalleryComment comment) {
-            SpannableStringBuilder ssb = Html.fromHtml(comment.comment, new URLImageGetter(textView,
-                EhApplication.getConaco(context)), null);
-
-            if (0 != comment.id && 0 != comment.score) {
-                int score = comment.score;
-                String scoreString = score > 0 ? "+" + score : Integer.toString(score);
-                SpannableString ss = new SpannableString(scoreString);
-                ss.setSpan(new RelativeSizeSpan(0.8f), 0, scoreString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                ss.setSpan(new StyleSpan(Typeface.BOLD), 0, scoreString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                ss.setSpan(new ForegroundColorSpan(AttrResources.getAttrColor(context, android.R.attr.textColorSecondary))
-                    , 0, scoreString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                ssb.append("  ").append(ss);
-            }
-
-            if (comment.lastEdited != 0) {
-                String str = context.getString(R.string.last_edited, ReadableTime.getTimeAgo(comment.lastEdited));
-                SpannableString ss = new SpannableString(str);
-                ss.setSpan(new RelativeSizeSpan(0.8f), 0, str.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                ss.setSpan(new StyleSpan(Typeface.BOLD), 0, str.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                ss.setSpan(new ForegroundColorSpan(AttrResources.getAttrColor(context, android.R.attr.textColorSecondary)),
-                    0, str.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                ssb.append("\n\n").append(ss);
-            }
-
-            return TextUrl.handleTextUrl(ssb);
-        }
-
-        public void bind(GalleryComment value) {
-            user.setText(value.user);
-            time.setText(ReadableTime.getTimeAgo(value.time));
-            comment.setText(generateComment(comment.getContext(), comment, value));
-        }
-    }
-
-    private class MoreCommentHolder extends CommentHolder {
-        public MoreCommentHolder(LayoutInflater inflater, ViewGroup parent) {
-            super(inflater, R.layout.item_gallery_comment_more, parent);
-        }
-    }
-
-    private class ProgressCommentHolder extends CommentHolder {
-        public ProgressCommentHolder(LayoutInflater inflater, ViewGroup parent) {
-            super(inflater, R.layout.item_gallery_comment_progress, parent);
-        }
-    }
-
-    private class CommentAdapter extends RecyclerView.Adapter<CommentHolder> {
-
-        private final LayoutInflater mInflater;
-
-        public CommentAdapter() {
-            mInflater = getLayoutInflater2();
-            AssertUtils.assertNotNull(mInflater);
-        }
-
-        @Override
-        public CommentHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            switch (viewType) {
-                case TYPE_COMMENT:
-                    return new ActualCommentHolder(mInflater, parent);
-                case TYPE_MORE:
-                    return new MoreCommentHolder(mInflater, parent);
-                case TYPE_PROGRESS:
-                    return new ProgressCommentHolder(mInflater, parent);
-                default:
-                    throw new IllegalStateException("Invalid view type: " + viewType);
-            }
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull CommentHolder holder, int position) {
-            Context context = getContext2();
-            if (context == null || mCommentList == null) {
-                return;
-            }
-
-            if (holder instanceof ActualCommentHolder) {
-                ((ActualCommentHolder) holder).bind(mCommentList.comments[position]);
-            }
-        }
-
-        @Override
-        public int getItemCount() {
-            if (mCommentList == null || mCommentList.comments == null) {
-                return 0;
-            } else if (mCommentList.hasMore) {
-                return mCommentList.comments.length + 1;
-            } else {
-                return mCommentList.comments.length;
-            }
-        }
-
-        @Override
-        public int getItemViewType(int position) {
-            if (position >= mCommentList.comments.length) {
-                return mRefreshingComments ? TYPE_PROGRESS : TYPE_MORE;
-            } else {
-                return TYPE_COMMENT;
-            }
-        }
-    }
-
     private void onRefreshGallerySuccess(GalleryCommentList result) {
         if (mAdapter == null) {
             return;
@@ -823,7 +678,7 @@ public final class GalleryCommentsScene extends ToolbarScene
     }
 
     private void onVoteCommentSuccess(VoteCommentParser.Result result) {
-        if (mAdapter == null || mCommentList == null || mCommentList.comments == null ) {
+        if (mAdapter == null || mCommentList == null || mCommentList.comments == null) {
             return;
         }
 
@@ -882,7 +737,8 @@ public final class GalleryCommentsScene extends ToolbarScene
         }
 
         @Override
-        public void onCancel() { }
+        public void onCancel() {
+        }
 
         @Override
         public boolean isInstance(SceneFragment scene) {
@@ -933,8 +789,8 @@ public final class GalleryCommentsScene extends ToolbarScene
         @Override
         public void onSuccess(VoteCommentParser.Result result) {
             showTip(result.expectVote > 0 ?
-                    (0 != result.vote ? R.string.vote_up_successfully : R.string.cancel_vote_up_successfully) :
-                    (0 != result.vote ? R.string.vote_down_successfully : R.string.cancel_vote_down_successfully),
+                            (0 != result.vote ? R.string.vote_up_successfully : R.string.cancel_vote_up_successfully) :
+                            (0 != result.vote ? R.string.vote_down_successfully : R.string.cancel_vote_down_successfully),
                     LENGTH_SHORT);
 
             GalleryCommentsScene scene = getScene();
@@ -949,11 +805,151 @@ public final class GalleryCommentsScene extends ToolbarScene
         }
 
         @Override
-        public void onCancel() {}
+        public void onCancel() {
+        }
 
         @Override
         public boolean isInstance(SceneFragment scene) {
             return scene instanceof GalleryCommentsScene;
+        }
+    }
+
+    private class InfoHolder extends RecyclerView.ViewHolder {
+
+        private final TextView key;
+        private final TextView value;
+
+        public InfoHolder(View itemView) {
+            super(itemView);
+            key = (TextView) ViewUtils.$$(itemView, R.id.key);
+            value = (TextView) ViewUtils.$$(itemView, R.id.value);
+        }
+    }
+
+    private abstract class CommentHolder extends RecyclerView.ViewHolder {
+        public CommentHolder(LayoutInflater inflater, int resId, ViewGroup parent) {
+            super(inflater.inflate(resId, parent, false));
+        }
+    }
+
+    private class ActualCommentHolder extends CommentHolder {
+
+        private final TextView user;
+        private final TextView time;
+        private final LinkifyTextView comment;
+
+        public ActualCommentHolder(LayoutInflater inflater, ViewGroup parent) {
+            super(inflater, R.layout.item_gallery_comment, parent);
+            user = itemView.findViewById(R.id.user);
+            time = itemView.findViewById(R.id.time);
+            comment = itemView.findViewById(R.id.comment);
+        }
+
+        private CharSequence generateComment(Context context, ObservedTextView textView, GalleryComment comment) {
+            SpannableStringBuilder ssb = Html.fromHtml(comment.comment, new URLImageGetter(textView,
+                    EhApplication.getConaco(context)), null);
+
+            if (0 != comment.id && 0 != comment.score) {
+                int score = comment.score;
+                String scoreString = score > 0 ? "+" + score : Integer.toString(score);
+                SpannableString ss = new SpannableString(scoreString);
+                ss.setSpan(new RelativeSizeSpan(0.8f), 0, scoreString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ss.setSpan(new StyleSpan(Typeface.BOLD), 0, scoreString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ss.setSpan(new ForegroundColorSpan(AttrResources.getAttrColor(context, android.R.attr.textColorSecondary))
+                        , 0, scoreString.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ssb.append("  ").append(ss);
+            }
+
+            if (comment.lastEdited != 0) {
+                String str = context.getString(R.string.last_edited, ReadableTime.getTimeAgo(comment.lastEdited));
+                SpannableString ss = new SpannableString(str);
+                ss.setSpan(new RelativeSizeSpan(0.8f), 0, str.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ss.setSpan(new StyleSpan(Typeface.BOLD), 0, str.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ss.setSpan(new ForegroundColorSpan(AttrResources.getAttrColor(context, android.R.attr.textColorSecondary)),
+                        0, str.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ssb.append("\n\n").append(ss);
+            }
+
+            return TextUrl.handleTextUrl(ssb);
+        }
+
+        public void bind(GalleryComment value) {
+            user.setText(value.user);
+            time.setText(ReadableTime.getTimeAgo(value.time));
+            comment.setText(generateComment(comment.getContext(), comment, value));
+        }
+    }
+
+    private class MoreCommentHolder extends CommentHolder {
+        public MoreCommentHolder(LayoutInflater inflater, ViewGroup parent) {
+            super(inflater, R.layout.item_gallery_comment_more, parent);
+        }
+    }
+
+    private class ProgressCommentHolder extends CommentHolder {
+        public ProgressCommentHolder(LayoutInflater inflater, ViewGroup parent) {
+            super(inflater, R.layout.item_gallery_comment_progress, parent);
+        }
+    }
+
+    private class CommentAdapter extends RecyclerView.Adapter<CommentHolder> {
+
+        private final LayoutInflater mInflater;
+
+        public CommentAdapter() {
+            mInflater = getLayoutInflater2();
+            AssertUtils.assertNotNull(mInflater);
+        }
+
+        @Override
+        public CommentHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            switch (viewType) {
+                case TYPE_COMMENT:
+                    return new ActualCommentHolder(mInflater, parent);
+                case TYPE_MORE:
+                    return new MoreCommentHolder(mInflater, parent);
+                case TYPE_PROGRESS:
+                    return new ProgressCommentHolder(mInflater, parent);
+                default:
+                    throw new IllegalStateException("Invalid view type: " + viewType);
+            }
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull CommentHolder holder, int position) {
+            Context context = getContext2();
+            if (context == null || mCommentList == null) {
+                return;
+            }
+
+            holder.itemView.setOnClickListener(v -> onItemClick(mRecyclerView, holder.itemView, position));
+            holder.itemView.setClickable(true);
+            holder.itemView.setFocusable(true);
+
+
+            if (holder instanceof ActualCommentHolder) {
+                ((ActualCommentHolder) holder).bind(mCommentList.comments[position]);
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            if (mCommentList == null || mCommentList.comments == null) {
+                return 0;
+            } else if (mCommentList.hasMore) {
+                return mCommentList.comments.length + 1;
+            } else {
+                return mCommentList.comments.length;
+            }
+        }
+
+        @Override
+        public int getItemViewType(int position) {
+            if (position >= mCommentList.comments.length) {
+                return mRefreshingComments ? TYPE_PROGRESS : TYPE_MORE;
+            } else {
+                return TYPE_COMMENT;
+            }
         }
     }
 }

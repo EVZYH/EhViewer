@@ -17,7 +17,6 @@
 package com.hippo.ehviewer.ui.scene;
 
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -27,8 +26,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.TextView;
+
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
+
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputLayout;
 import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.R;
@@ -37,6 +38,7 @@ import com.hippo.ehviewer.client.EhUrl;
 import com.hippo.ehviewer.client.EhUtils;
 import com.hippo.yorozuya.AssertUtils;
 import com.hippo.yorozuya.ViewUtils;
+
 import okhttp3.Cookie;
 
 public class CookieSignInScene extends SolidScene implements EditText.OnEditorActionListener,
@@ -60,6 +62,36 @@ public class CookieSignInScene extends SolidScene implements EditText.OnEditorAc
     @Nullable
     private View mOk;
 
+    // false for error
+    private static boolean checkIpbMemberId(String id) {
+        for (int i = 0, n = id.length(); i < n; i++) {
+            char ch = id.charAt(i);
+            if (!(ch >= '0' && ch <= '9')) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean checkIpbPassHash(String hash) {
+        if (32 != hash.length()) {
+            return false;
+        }
+
+        for (int i = 0, n = hash.length(); i < n; i++) {
+            char ch = hash.charAt(i);
+            if (!(ch >= '0' && ch <= '9') && !(ch >= 'a' && ch <= 'z')) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static Cookie newCookie(String name, String value, String domain) {
+        return new Cookie.Builder().name(name).value(value)
+                .domain(domain).expiresAt(Long.MAX_VALUE).build();
+    }
+
     @Override
     public boolean needShowLeftDrawer() {
         return false;
@@ -68,7 +100,7 @@ public class CookieSignInScene extends SolidScene implements EditText.OnEditorAc
     @Nullable
     @Override
     public View onCreateView2(LayoutInflater inflater,
-            @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+                              @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.scene_cookie_sign_in, container, false);
         mIpbMemberIdLayout = (TextInputLayout) ViewUtils.$$(view, R.id.ipb_member_id_layout);
         mIpbMemberId = mIpbMemberIdLayout.getEditText();
@@ -112,7 +144,6 @@ public class CookieSignInScene extends SolidScene implements EditText.OnEditorAc
         return view;
     }
 
-
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -147,31 +178,6 @@ public class CookieSignInScene extends SolidScene implements EditText.OnEditorAc
         return true;
     }
 
-    // false for error
-    private static boolean checkIpbMemberId(String id) {
-        for (int i = 0, n = id.length(); i < n; i++) {
-            char ch = id.charAt(i);
-            if (!(ch >= '0' && ch <= '9')) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static boolean checkIpbPassHash(String hash) {
-        if (32 != hash.length()) {
-            return false;
-        }
-
-        for (int i = 0, n = hash.length(); i < n; i++) {
-            char ch = hash.charAt(i);
-            if (!(ch >= '0' && ch <= '9') && !(ch >= 'a' && ch <= 'z')) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     public void enter() {
         Context context = getContext2();
         if (null == context || null == mIpbMemberIdLayout || null == mIpbPassHashLayout ||
@@ -200,27 +206,19 @@ public class CookieSignInScene extends SolidScene implements EditText.OnEditorAc
         hideSoftInput();
 
         if (!checkIpbMemberId(ipbMemberId) || !(checkIpbPassHash(ipbPassHash))) {
-            new AlertDialog.Builder(context).setTitle(R.string.waring)
+            new MaterialAlertDialogBuilder(context).setTitle(R.string.waring)
                     .setMessage(R.string.wrong_cookie_warning)
                     .setNegativeButton(R.string.i_dont_think_so, null)
-                    .setPositiveButton(R.string.i_will_check_it, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            storeCookie(ipbMemberId, ipbPassHash, igneous);
-                            setResult(RESULT_OK, null);
-                            finish();
-                        }
+                    .setPositiveButton(R.string.i_will_check_it, (dialog, which) -> {
+                        storeCookie(ipbMemberId, ipbPassHash, igneous);
+                        setResult(RESULT_OK, null);
+                        finish();
                     }).show();
         } else {
             storeCookie(ipbMemberId, ipbPassHash, igneous);
             setResult(RESULT_OK, null);
             finish();
         }
-    }
-
-    private static Cookie newCookie(String name, String value, String domain) {
-        return new Cookie.Builder().name(name).value(value)
-                .domain(domain).expiresAt(Long.MAX_VALUE).build();
     }
 
     private void storeCookie(String id, String hash, String igneous) {

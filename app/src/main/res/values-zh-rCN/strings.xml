@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
+<?xml version="1.0" encoding="utf-8"?><!--
   ~ Copyright 2016 Hippo Sevenerror_please_login_first
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -399,11 +398,6 @@
     <string name="invalid_host">无效的 host</string>
     <string name="invalid_ip">无效的 IP</string>
 
-    <!-- DirPickerActivity -->
-    <string name="preset">预设</string>
-    <string name="default_directory">默认目录</string>
-    <string name="application_file_directory">应用文件目录 %d （应用卸载后会被删除）</string>
-
     <!-- Gallery Activity -->
     <string name="page_menu_title">第 %d 页</string>
     <string name="page_menu_refresh">@string/refresh</string>
@@ -464,8 +458,8 @@
     <string name="settings_eh_show_gallery_pages_summary">在画廊列表中显示页数</string>
     <string name="settings_eh_show_tag_translations">显示标签翻译</string>
     <string name="settings_eh_show_tag_translations_summary">显示翻译后的标签而非原始文字（需花费时间来下载数据文件）</string>
-    <string name="settings_eh_tag_translations_source">补充翻译（由 EhTagTranslator 提供）</string>
-    <string name="settings_eh_tag_translations_source_url">https://github.com/Mapaler/EhTagTranslator/wiki</string>
+    <string name="settings_eh_tag_translations_source">补充翻译（由 EhTagTranslation 提供）</string>
+    <string name="settings_eh_tag_translations_source_url">https://github.com/EhTagTranslation/Editor/wiki</string>
     <string name="settings_eh_filter">屏蔽画廊</string>
     <string name="settings_eh_filter_summary">根据标题、上传者、标签屏蔽画廊</string>
     <string name="settings_eh_cellular_network_warning">移动网络警告</string>
@@ -716,4 +710,10 @@
 
     <string name="download_service">下载服务</string>
     <string name="favorite_name">收藏画廊</string>
+
+    <string name="follow_system">跟随系统</string>
+    <string name="black_dark_theme">纯黑深色主题</string>
+    <string name="download_filter">过滤</string>
+    <string name="download_all">全部</string>
+    <string name="download_start_all_reversed">全部开始（倒序）</string>
 </resources>

@@ -16,34 +16,38 @@
 
 package com.hippo.ehviewer.ui;
 
-import android.Manifest;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.net.ConnectivityManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.PersistableBundle;
 import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.annotation.IdRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
-import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.core.view.ViewCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
+
+import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
-import com.hippo.drawerlayout.DrawerLayout;
 import com.hippo.ehviewer.AppConfig;
 import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.R;
@@ -54,7 +58,6 @@ import com.hippo.ehviewer.client.EhUtils;
 import com.hippo.ehviewer.client.data.ListUrlBuilder;
 import com.hippo.ehviewer.client.parser.GalleryDetailUrlParser;
 import com.hippo.ehviewer.client.parser.GalleryPageUrlParser;
-import com.hippo.ehviewer.ui.scene.AnalyticsScene;
 import com.hippo.ehviewer.ui.scene.BaseScene;
 import com.hippo.ehviewer.ui.scene.CookieSignInScene;
 import com.hippo.ehviewer.ui.scene.DownloadLabelsScene;
@@ -82,12 +85,11 @@ import com.hippo.scene.SceneFragment;
 import com.hippo.scene.StageActivity;
 import com.hippo.unifile.UniFile;
 import com.hippo.util.BitmapUtils;
-import com.hippo.util.PermissionRequester;
 import com.hippo.widget.LoadImageView;
 import com.hippo.yorozuya.IOUtils;
-import com.hippo.yorozuya.ResourcesUtils;
 import com.hippo.yorozuya.SimpleHandler;
 import com.hippo.yorozuya.ViewUtils;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -103,28 +105,10 @@ public final class MainActivity extends StageActivity
     private static final String KEY_NAV_CHECKED_ITEM = "nav_checked_item";
     private static final String KEY_CLIP_TEXT_HASH_CODE = "clip_text_hash_code";
 
-    /*---------------
-     Whole life cycle
-     ---------------*/
-    @Nullable
-    private EhDrawerLayout mDrawerLayout;
-    @Nullable
-    private NavigationView mNavView;
-    @Nullable
-    private FrameLayout mRightDrawer;
-    @Nullable
-    private LoadImageView mAvatar;
-    @Nullable
-    private TextView mDisplayName;
-    @Nullable
-    private Button mChangeTheme;
-
-    private int mNavCheckedItem = 0;
-
     static {
         registerLaunchMode(SecurityScene.class, SceneFragment.LAUNCH_MODE_SINGLE_TASK);
         registerLaunchMode(WarningScene.class, SceneFragment.LAUNCH_MODE_SINGLE_TASK);
-        registerLaunchMode(AnalyticsScene.class, SceneFragment.LAUNCH_MODE_SINGLE_TASK);
+        //registerLaunchMode(AnalyticsScene.class, SceneFragment.LAUNCH_MODE_SINGLE_TASK);
         registerLaunchMode(SignInScene.class, SceneFragment.LAUNCH_MODE_SINGLE_TASK);
         registerLaunchMode(WebViewSignInScene.class, SceneFragment.LAUNCH_MODE_SINGLE_TASK);
         registerLaunchMode(CookieSignInScene.class, SceneFragment.LAUNCH_MODE_SINGLE_TASK);
@@ -142,18 +126,20 @@ public final class MainActivity extends StageActivity
         registerLaunchMode(ProgressScene.class, SceneFragment.LAUNCH_MODE_STANDARD);
     }
 
-    @Override
-    protected int getThemeResId(int theme) {
-        switch (theme) {
-            case Settings.THEME_LIGHT:
-            default:
-                return R.style.AppTheme_Main;
-            case Settings.THEME_DARK:
-                return R.style.AppTheme_Main_Dark;
-            case Settings.THEME_BLACK:
-                return R.style.AppTheme_Main_Black;
-        }
-    }
+    /*---------------
+     Whole life cycle
+     ---------------*/
+    @Nullable
+    private EhDrawerLayout mDrawerLayout;
+    @Nullable
+    private NavigationView mNavView;
+    @Nullable
+    private MaterialCardView mRightDrawer;
+    @Nullable
+    private LoadImageView mAvatar;
+    @Nullable
+    private TextView mDisplayName;
+    private int mNavCheckedItem = 0;
 
     @Override
     public int getContainerViewId() {
@@ -167,9 +153,9 @@ public final class MainActivity extends StageActivity
             return new Announcer(SecurityScene.class);
         } else if (Settings.getShowWarning()) {
             return new Announcer(WarningScene.class);
-        } else if (Settings.getAskAnalytics()) {
+        }/* else if (Settings.getAskAnalytics()) {
             return new Announcer(AnalyticsScene.class);
-        } else if (EhUtils.needSignedIn(this)) {
+        }*/ else if (EhUtils.needSignedIn(this)) {
             return new Announcer(SignInScene.class);
         } else if (Settings.getSelectSite()) {
             return new Announcer(SelectSiteScene.class);
@@ -193,12 +179,12 @@ public final class MainActivity extends StageActivity
                 newArgs.putString(WarningScene.KEY_TARGET_SCENE, announcer.getClazz().getName());
                 newArgs.putBundle(WarningScene.KEY_TARGET_ARGS, announcer.getArgs());
                 return new Announcer(WarningScene.class).setArgs(newArgs);
-            } else if (Settings.getAskAnalytics()) {
+            }/* else if (Settings.getAskAnalytics()) {
                 Bundle newArgs = new Bundle();
                 newArgs.putString(AnalyticsScene.KEY_TARGET_SCENE, announcer.getClazz().getName());
                 newArgs.putBundle(AnalyticsScene.KEY_TARGET_ARGS, announcer.getArgs());
                 return new Announcer(AnalyticsScene.class).setArgs(newArgs);
-            } else if (EhUtils.needSignedIn(this)) {
+            }*/ else if (EhUtils.needSignedIn(this)) {
                 Bundle newArgs = new Bundle();
                 newArgs.putString(SignInScene.KEY_TARGET_SCENE, announcer.getClazz().getName());
                 newArgs.putBundle(SignInScene.KEY_TARGET_ARGS, announcer.getArgs());
@@ -328,18 +314,16 @@ public final class MainActivity extends StageActivity
 
         mDrawerLayout = (EhDrawerLayout) ViewUtils.$$(this, R.id.draw_view);
         mNavView = (NavigationView) ViewUtils.$$(this, R.id.nav_view);
-        mRightDrawer = (FrameLayout) ViewUtils.$$(this, R.id.right_drawer);
+        mRightDrawer = (MaterialCardView) ViewUtils.$$(this, R.id.right_drawer);
         View headerLayout = mNavView.getHeaderView(0);
         mAvatar = (LoadImageView) ViewUtils.$$(headerLayout, R.id.avatar);
         mDisplayName = (TextView) ViewUtils.$$(headerLayout, R.id.display_name);
-        mChangeTheme = (Button) ViewUtils.$$(this, R.id.change_theme);
-
-        mDrawerLayout.setStatusBarColor(ResourcesUtils.getAttrColor(this, R.attr.colorPrimaryDark));
-        // Pre-L need shadow drawable
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow_left, Gravity.LEFT);
-            mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow_right, Gravity.RIGHT);
-        }
+        ViewUtils.$$(headerLayout, R.id.night_mode).setOnClickListener(v -> {
+            int theme = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_YES) > 0 ? AppCompatDelegate.MODE_NIGHT_NO : AppCompatDelegate.MODE_NIGHT_YES;
+            AppCompatDelegate.setDefaultNightMode(theme);
+            ((EhApplication) getApplication()).recreate();
+            Settings.putTheme(theme);
+        });
 
         updateProfile();
 
@@ -347,14 +331,7 @@ public final class MainActivity extends StageActivity
             mNavView.setNavigationItemSelectedListener(this);
         }
 
-        mChangeTheme.setText(getThemeText());
-        mChangeTheme.setOnClickListener(v -> {
-            Settings.putTheme(getNextTheme());
-            ((EhApplication) getApplication()).recreate();
-        });
-
         if (savedInstanceState == null) {
-            onInit();
             CommonOperations.checkUpdate(this, false);
             checkDownloadLocation();
             if (Settings.getCellularNetworkWarning()) {
@@ -367,42 +344,13 @@ public final class MainActivity extends StageActivity
         EhTagDatabase.update(this);
     }
 
-    private String getThemeText() {
-        int resId;
-        switch (Settings.getTheme()) {
-            default:
-            case Settings.THEME_LIGHT:
-                resId = R.string.theme_light;
-                break;
-            case Settings.THEME_DARK:
-                resId = R.string.theme_dark;
-                break;
-            case Settings.THEME_BLACK:
-                resId = R.string.theme_black;
-                break;
-        }
-        return getString(resId);
-    }
-
-    private int getNextTheme() {
-        switch (Settings.getTheme()) {
-            default:
-            case Settings.THEME_LIGHT:
-                return Settings.THEME_DARK;
-            case Settings.THEME_DARK:
-                return Settings.THEME_BLACK;
-            case Settings.THEME_BLACK:
-                return Settings.THEME_LIGHT;
-        }
-    }
-
     private void checkDownloadLocation() {
         UniFile uniFile = Settings.getDownloadLocation();
         // null == uniFile for first start
         if (null == uniFile || uniFile.ensureDir()) {
             return;
         }
-        new AlertDialog.Builder(this)
+        new MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.waring)
                 .setMessage(R.string.invalid_download_location)
                 .setPositiveButton(R.string.get_it, null)
@@ -413,12 +361,6 @@ public final class MainActivity extends StageActivity
         if (Network.getActiveNetworkType(this) == ConnectivityManager.TYPE_MOBILE) {
             showTip(R.string.cellular_network_warning, BaseScene.LENGTH_SHORT);
         }
-    }
-
-    private void onInit() {
-        // Check permission
-        PermissionRequester.request(this, Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                getString(R.string.write_rationale), PERMISSION_REQUEST_WRITE_EXTERNAL_STORAGE);
     }
 
     private void onRestore(Bundle savedInstanceState) {
@@ -513,7 +455,7 @@ public final class MainActivity extends StageActivity
         if (text != null && hashCode != 0 && Settings.getClipboardTextHashCode() != hashCode) {
             Announcer announcer = createAnnouncerFromClipboardUrl(text);
             if (announcer != null && mDrawerLayout != null) {
-                Snackbar snackbar = Snackbar.make(mDrawerLayout, R.string.clipboard_gallery_url_snack_message, Snackbar.LENGTH_INDEFINITE);
+                Snackbar snackbar = Snackbar.make(mDrawerLayout, R.string.clipboard_gallery_url_snack_message, Snackbar.LENGTH_SHORT);
                 snackbar.setAction(R.string.clipboard_gallery_url_snack_action, v -> startScene(announcer));
                 snackbar.show();
             }
@@ -524,7 +466,7 @@ public final class MainActivity extends StageActivity
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
-            @NonNull String[] permissions, @NonNull int[] grantResults) {
+                                           @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == PERMISSION_REQUEST_WRITE_EXTERNAL_STORAGE) {
             if (grantResults.length == 1 && grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                 Toast.makeText(this, R.string.you_rejected_me, Toast.LENGTH_SHORT).show();
@@ -629,15 +571,9 @@ public final class MainActivity extends StageActivity
         }
     }
 
-    public void setDrawerGestureBlocker(DrawerLayout.GestureBlocker gestureBlocker) {
-        if (mDrawerLayout != null) {
-            mDrawerLayout.setGestureBlocker(gestureBlocker);
-        }
-    }
-
     public boolean isDrawersVisible() {
         if (mDrawerLayout != null) {
-            return mDrawerLayout.isDrawersVisible();
+            return mDrawerLayout.isDrawerVisible(mDrawerLayout);
         } else {
             return false;
         }
@@ -664,7 +600,7 @@ public final class MainActivity extends StageActivity
     public void showTip(CharSequence message, int length) {
         if (null != mDrawerLayout) {
             Snackbar.make(mDrawerLayout, message,
-                    length == BaseScene.LENGTH_LONG ? 5000 : 3000).show();
+                    length == BaseScene.LENGTH_LONG ? Snackbar.LENGTH_LONG : Snackbar.LENGTH_SHORT).show();
         } else {
             Toast.makeText(this, message,
                     length == BaseScene.LENGTH_LONG ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT).show();

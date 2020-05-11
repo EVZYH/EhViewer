@@ -17,13 +17,13 @@
 package com.hippo.ehviewer.ui;
 
 import android.app.Activity;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.util.Log;
-import androidx.appcompat.app.AlertDialog;
+
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.hippo.app.ListCheckBoxDialogBuilder;
 import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.EhDB;
@@ -40,20 +40,22 @@ import com.hippo.ehviewer.ui.scene.BaseScene;
 import com.hippo.text.Html;
 import com.hippo.unifile.UniFile;
 import com.hippo.util.ExceptionUtils;
-import com.hippo.util.IoThreadPoolExecutor;
 import com.hippo.yorozuya.FileUtils;
 import com.hippo.yorozuya.IOUtils;
 import com.hippo.yorozuya.collect.LongList;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 public final class CommonOperations {
 
@@ -62,135 +64,14 @@ public final class CommonOperations {
     private static boolean UPDATING;
 
     public static void checkUpdate(Activity activity, boolean feedback) {
-        if (!UPDATING) {
+        /*if (!UPDATING) {
             UPDATING = true;
             new UpdateTask(activity, feedback).executeOnExecutor(IoThreadPoolExecutor.getInstance());
-        }
-    }
-
-    private static final class UpdateTask extends AsyncTask<Void, Void, JSONObject> {
-
-        private final Activity mActivity;
-        private final OkHttpClient mHttpClient;
-        private final boolean mFeedback;
-
-        public UpdateTask(Activity activity, boolean feedback) {
-            mActivity = activity;
-            mHttpClient = EhApplication.getOkHttpClient(activity);
-            mFeedback = feedback;
-        }
-
-        private JSONObject fetchUpdateInfo(String url) throws IOException, JSONException {
-            Log.d(TAG, url);
-            Request request = new Request.Builder().url(url).build();
-            Response response = mHttpClient.newCall(request).execute();
-            return new JSONObject(response.body().string());
-        }
-
-        @Override
-        protected JSONObject doInBackground(Void... params) {
-            String url;
-            if (Settings.getBetaUpdateChannel()) {
-                url = "http://www.ehviewer.com/update_beta.json";
-            } else {
-                url = "http://www.ehviewer.com/update.json";
-            }
-
-            try {
-                return fetchUpdateInfo(url);
-            } catch (Throwable e1) {
-                ExceptionUtils.throwIfFatal(e1);
-
-                if (Settings.getBetaUpdateChannel()) {
-                    url = "https://raw.githubusercontent.com/seven332/EhViewer/api/update_beta.json";
-                } else {
-                    url = "https://raw.githubusercontent.com/seven332/EhViewer/api/update.json";
-                }
-
-                try {
-                    return fetchUpdateInfo(url);
-                } catch (Throwable e2) {
-                    ExceptionUtils.throwIfFatal(e2);
-                    return null;
-                }
-            }
-        }
-
-        private void showUpToDateDialog() {
-            new AlertDialog.Builder(mActivity)
-                    .setMessage(R.string.update_to_date)
-                    .setPositiveButton(android.R.string.ok, null)
-                    .show();
-        }
-
-        private void showUpdateDialog(String versionName, int versionCode, String size, CharSequence info, final String url) {
-            new AlertDialog.Builder(mActivity)
-                    .setTitle(R.string.update)
-                    .setMessage(mActivity.getString(R.string.update_plain, versionName, size, info))
-                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            UrlOpener.openUrl(mActivity, url, false);
-                        }
-                    })
-                    .setNegativeButton(R.string.update_ignore, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            Settings.putSkipUpdateVersion(versionCode);
-                        }
-                    }).show();
-        }
-
-        private void handleResult(JSONObject jo) {
-            if (null == jo || mActivity.isFinishing()) {
-                return;
-            }
-
-            String versionName;
-            int versionCode;
-            String size;
-            CharSequence info;
-            String url;
-
-            try {
-                PackageManager pm = mActivity.getPackageManager();
-                PackageInfo pi = pm.getPackageInfo(mActivity.getPackageName(), PackageManager.GET_ACTIVITIES);
-                int currentVersionCode = pi.versionCode;
-                versionCode = jo.getInt("version_code");
-                if (currentVersionCode >= versionCode) {
-                    // Update to date
-                    if (mFeedback) {
-                        showUpToDateDialog();
-                    }
-                    return;
-                }
-
-                versionName = jo.getString("version_name");
-                size = FileUtils.humanReadableByteCount(jo.getLong("size"), false);
-                info = Html.fromHtml(jo.getString("info"));
-                url = jo.getString("url");
-            } catch (Throwable e) {
-                ExceptionUtils.throwIfFatal(e);
-                return;
-            }
-
-            if (mFeedback || versionCode != Settings.getSkipUpdateVersion()) {
-                showUpdateDialog(versionName, versionCode, size, info, url);
-            }
-        }
-
-        @Override
-        protected void onPostExecute(JSONObject jsonObject) {
-            try {
-                handleResult(jsonObject);
-            } finally {
-                UPDATING = false;
-            }
-        }
+        }*/
     }
 
     private static void doAddToFavorites(Activity activity, GalleryInfo galleryInfo,
-            int slot, EhClient.Callback<Void> listener) {
+                                         int slot, EhClient.Callback<Void> listener) {
         if (slot == -1) {
             EhDB.putLocalFavorites(galleryInfo);
             listener.onSuccess(null);
@@ -207,7 +88,7 @@ public final class CommonOperations {
     }
 
     public static void addToFavorites(final Activity activity, final GalleryInfo galleryInfo,
-            final EhClient.Callback<Void> listener) {
+                                      final EhClient.Callback<Void> listener) {
         int slot = Settings.getDefaultFavSlot();
         String[] items = new String[11];
         items[0] = activity.getString(R.string.local_favorites);
@@ -220,7 +101,7 @@ public final class CommonOperations {
             new ListCheckBoxDialogBuilder(activity, items,
                     (builder, dialog, position) -> {
                         int slot1 = position - 1;
-                        String newFavoriteName = (slot1 >= 0 && slot1 <= 9) ? items[slot1+1] : null;
+                        String newFavoriteName = (slot1 >= 0 && slot1 <= 9) ? items[slot1 + 1] : null;
                         doAddToFavorites(activity, galleryInfo, slot1, new DelegateFavoriteCallback(listener, galleryInfo, newFavoriteName, slot1));
                         if (builder.isChecked()) {
                             Settings.putDefaultFavSlot(slot1);
@@ -235,7 +116,7 @@ public final class CommonOperations {
     }
 
     public static void removeFromFavorites(Activity activity, GalleryInfo galleryInfo,
-            final EhClient.Callback<Void> listener) {
+                                           final EhClient.Callback<Void> listener) {
         EhDB.removeLocalFavorites(galleryInfo.gid);
         EhClient client = EhApplication.getEhClient(activity);
         EhRequest request = new EhRequest();
@@ -243,40 +124,6 @@ public final class CommonOperations {
         request.setArgs(galleryInfo.gid, galleryInfo.token, -1, "");
         request.setCallback(new DelegateFavoriteCallback(listener, galleryInfo, null, -2));
         client.execute(request);
-    }
-
-    private static class DelegateFavoriteCallback implements EhClient.Callback<Void> {
-
-        private final EhClient.Callback<Void> delegate;
-        private final GalleryInfo info;
-        private final String newFavoriteName;
-        private final int slot;
-
-        DelegateFavoriteCallback(EhClient.Callback<Void> delegate, GalleryInfo info,
-                String newFavoriteName, int slot) {
-            this.delegate = delegate;
-            this.info = info;
-            this.newFavoriteName = newFavoriteName;
-            this.slot = slot;
-        }
-
-        @Override
-        public void onSuccess(Void result) {
-            info.favoriteName = newFavoriteName;
-            info.favoriteSlot = slot;
-            delegate.onSuccess(result);
-            EhApplication.getFavouriteStatusRouter().modifyFavourites(info.gid, slot);
-        }
-
-        @Override
-        public void onFailure(Exception e) {
-            delegate.onFailure(e);
-        }
-
-        @Override
-        public void onCancel() {
-            delegate.onCancel();
-        }
     }
 
     public static void startDownload(final MainActivity activity, final GalleryInfo galleryInfo, boolean forceDefault) {
@@ -343,36 +190,33 @@ public final class CommonOperations {
             }
 
             new ListCheckBoxDialogBuilder(activity, items,
-                    new ListCheckBoxDialogBuilder.OnItemClickListener() {
-                        @Override
-                        public void onItemClick(ListCheckBoxDialogBuilder builder, AlertDialog dialog, int position) {
-                            String label;
-                            if (position == 0) {
-                                label = null;
-                            } else {
-                                label = items[position];
-                                if (!dm.containLabel(label)) {
-                                    label = null;
-                                }
+                    (builder, dialog, position) -> {
+                        String label1;
+                        if (position == 0) {
+                            label1 = null;
+                        } else {
+                            label1 = items[position];
+                            if (!dm.containLabel(label1)) {
+                                label1 = null;
                             }
-                            // Start download
-                            for (GalleryInfo gi : toAdd) {
-                                Intent intent = new Intent(activity, DownloadService.class);
-                                intent.setAction(DownloadService.ACTION_START);
-                                intent.putExtra(DownloadService.KEY_LABEL, label);
-                                intent.putExtra(DownloadService.KEY_GALLERY_INFO, gi);
-                                activity.startService(intent);
-                            }
-                            // Save settings
-                            if (builder.isChecked()) {
-                                Settings.putHasDefaultDownloadLabel(true);
-                                Settings.putDefaultDownloadLabel(label);
-                            } else {
-                                Settings.putHasDefaultDownloadLabel(false);
-                            }
-                            // Notify
-                            activity.showTip(R.string.added_to_download_list, BaseScene.LENGTH_SHORT);
                         }
+                        // Start download
+                        for (GalleryInfo gi : toAdd) {
+                            Intent intent = new Intent(activity, DownloadService.class);
+                            intent.setAction(DownloadService.ACTION_START);
+                            intent.putExtra(DownloadService.KEY_LABEL, label1);
+                            intent.putExtra(DownloadService.KEY_GALLERY_INFO, gi);
+                            activity.startService(intent);
+                        }
+                        // Save settings
+                        if (builder.isChecked()) {
+                            Settings.putHasDefaultDownloadLabel(true);
+                            Settings.putDefaultDownloadLabel(label1);
+                        } else {
+                            Settings.putHasDefaultDownloadLabel(false);
+                        }
+                        // Notify
+                        activity.showTip(R.string.added_to_download_list, BaseScene.LENGTH_SHORT);
                     }, activity.getString(R.string.remember_download_label), false)
                     .setTitle(R.string.download)
                     .show();
@@ -407,6 +251,151 @@ public final class CommonOperations {
         UniFile noMedia = file.subFile(".nomedia");
         if (null != noMedia && noMedia.isFile()) {
             noMedia.delete();
+        }
+    }
+
+    private static final class UpdateTask extends AsyncTask<Void, Void, JSONObject> {
+
+        private final Activity mActivity;
+        private final OkHttpClient mHttpClient;
+        private final boolean mFeedback;
+
+        public UpdateTask(Activity activity, boolean feedback) {
+            mActivity = activity;
+            mHttpClient = EhApplication.getOkHttpClient(activity);
+            mFeedback = feedback;
+        }
+
+        private JSONObject fetchUpdateInfo(String url) throws IOException, JSONException {
+            Log.d(TAG, url);
+            Request request = new Request.Builder().url(url).build();
+            Response response = mHttpClient.newCall(request).execute();
+            return new JSONObject(response.body().string());
+        }
+
+        @Override
+        protected JSONObject doInBackground(Void... params) {
+            String url;
+            if (Settings.getBetaUpdateChannel()) {
+                url = "http://www.ehviewer.com/update_beta.json";
+            } else {
+                url = "http://www.ehviewer.com/update.json";
+            }
+
+            try {
+                return fetchUpdateInfo(url);
+            } catch (Throwable e1) {
+                ExceptionUtils.throwIfFatal(e1);
+
+                if (Settings.getBetaUpdateChannel()) {
+                    url = "https://raw.githubusercontent.com/seven332/EhViewer/api/update_beta.json";
+                } else {
+                    url = "https://raw.githubusercontent.com/seven332/EhViewer/api/update.json";
+                }
+
+                try {
+                    return fetchUpdateInfo(url);
+                } catch (Throwable e2) {
+                    ExceptionUtils.throwIfFatal(e2);
+                    return null;
+                }
+            }
+        }
+
+        private void showUpToDateDialog() {
+            new MaterialAlertDialogBuilder(mActivity)
+                    .setMessage(R.string.update_to_date)
+                    .setPositiveButton(android.R.string.ok, null)
+                    .show();
+        }
+
+        private void showUpdateDialog(String versionName, int versionCode, String size, CharSequence info, final String url) {
+            new MaterialAlertDialogBuilder(mActivity)
+                    .setTitle(R.string.update)
+                    .setMessage(mActivity.getString(R.string.update_plain, versionName, size, info))
+                    .setPositiveButton(android.R.string.ok, (dialog, which) -> UrlOpener.openUrl(mActivity, url, false))
+                    .setNegativeButton(R.string.update_ignore, (dialog, which) -> Settings.putSkipUpdateVersion(versionCode)).show();
+        }
+
+        private void handleResult(JSONObject jo) {
+            if (null == jo || mActivity.isFinishing()) {
+                return;
+            }
+
+            String versionName;
+            int versionCode;
+            String size;
+            CharSequence info;
+            String url;
+
+            try {
+                PackageManager pm = mActivity.getPackageManager();
+                PackageInfo pi = pm.getPackageInfo(mActivity.getPackageName(), PackageManager.GET_ACTIVITIES);
+                int currentVersionCode = pi.versionCode;
+                versionCode = jo.getInt("version_code");
+                if (currentVersionCode >= versionCode) {
+                    // Update to date
+                    if (mFeedback) {
+                        showUpToDateDialog();
+                    }
+                    return;
+                }
+
+                versionName = jo.getString("version_name");
+                size = FileUtils.humanReadableByteCount(jo.getLong("size"), false);
+                info = Html.fromHtml(jo.getString("info"));
+                url = jo.getString("url");
+            } catch (Throwable e) {
+                ExceptionUtils.throwIfFatal(e);
+                return;
+            }
+
+            if (mFeedback || versionCode != Settings.getSkipUpdateVersion()) {
+                showUpdateDialog(versionName, versionCode, size, info, url);
+            }
+        }
+
+        @Override
+        protected void onPostExecute(JSONObject jsonObject) {
+            try {
+                handleResult(jsonObject);
+            } finally {
+                UPDATING = false;
+            }
+        }
+    }
+
+    private static class DelegateFavoriteCallback implements EhClient.Callback<Void> {
+
+        private final EhClient.Callback<Void> delegate;
+        private final GalleryInfo info;
+        private final String newFavoriteName;
+        private final int slot;
+
+        DelegateFavoriteCallback(EhClient.Callback<Void> delegate, GalleryInfo info,
+                                 String newFavoriteName, int slot) {
+            this.delegate = delegate;
+            this.info = info;
+            this.newFavoriteName = newFavoriteName;
+            this.slot = slot;
+        }
+
+        @Override
+        public void onSuccess(Void result) {
+            info.favoriteName = newFavoriteName;
+            info.favoriteSlot = slot;
+            delegate.onSuccess(result);
+            EhApplication.getFavouriteStatusRouter().modifyFavourites(info.gid, slot);
+        }
+
+        @Override
+        public void onFailure(Exception e) {
+            delegate.onFailure(e);
+        }
+
+        @Override
+        public void onCancel() {
+            delegate.onCancel();
         }
     }
 }

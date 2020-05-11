@@ -16,57 +16,53 @@
 
 package com.hippo.ehviewer.preference;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.util.AttributeSet;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.Toast;
-import com.google.android.material.snackbar.Snackbar;
+
 import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.client.EhCookieStore;
 import com.hippo.ehviewer.client.EhUrl;
+import com.hippo.ehviewer.ui.SettingsActivity;
+import com.hippo.ehviewer.ui.scene.BaseScene;
 import com.hippo.preference.ActivityPreference;
+
 import okhttp3.HttpUrl;
 
 public class SignInRequiredActivityPreference extends ActivityPreference {
 
-  private View view;
+    @SuppressLint("StaticFieldLeak")
+    private final SettingsActivity mActivity;
 
-  public SignInRequiredActivityPreference(Context context) {
-    super(context);
-  }
-
-  public SignInRequiredActivityPreference(Context context, AttributeSet attrs) {
-    super(context, attrs);
-  }
-
-  public SignInRequiredActivityPreference(Context context, AttributeSet attrs, int defStyleAttr) {
-    super(context, attrs, defStyleAttr);
-  }
-
-  @Override
-  protected View onCreateView(ViewGroup parent) {
-    return view = super.onCreateView(parent);
-  }
-
-  @Override
-  protected void onClick() {
-    EhCookieStore store = EhApplication.getEhCookieStore(getContext());
-    HttpUrl e = HttpUrl.get(EhUrl.HOST_E);
-    HttpUrl ex = HttpUrl.get(EhUrl.HOST_EX);
-
-    if (store.contains(e, EhCookieStore.KEY_IPD_MEMBER_ID) ||
-        store.contains(e, EhCookieStore.KEY_IPD_PASS_HASH) ||
-        store.contains(ex, EhCookieStore.KEY_IPD_MEMBER_ID) ||
-        store.contains(ex, EhCookieStore.KEY_IPD_PASS_HASH)) {
-      super.onClick();
-    } else {
-      if (view != null) {
-        Snackbar.make(view, R.string.error_please_login_first, 3000).show();
-      } else {
-        Toast.makeText(getContext(), R.string.error_please_login_first, Toast.LENGTH_LONG).show();
-      }
+    public SignInRequiredActivityPreference(Context context) {
+        super(context);
+        mActivity = (SettingsActivity) context;
     }
-  }
+
+    public SignInRequiredActivityPreference(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        mActivity = (SettingsActivity) context;
+    }
+
+    public SignInRequiredActivityPreference(Context context, AttributeSet attrs, int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
+        mActivity = (SettingsActivity) context;
+    }
+
+    @Override
+    protected void onClick() {
+        EhCookieStore store = EhApplication.getEhCookieStore(getContext());
+        HttpUrl e = HttpUrl.get(EhUrl.HOST_E);
+        HttpUrl ex = HttpUrl.get(EhUrl.HOST_EX);
+
+        if (store.contains(e, EhCookieStore.KEY_IPD_MEMBER_ID) ||
+                store.contains(e, EhCookieStore.KEY_IPD_PASS_HASH) ||
+                store.contains(ex, EhCookieStore.KEY_IPD_MEMBER_ID) ||
+                store.contains(ex, EhCookieStore.KEY_IPD_PASS_HASH)) {
+            super.onClick();
+        } else {
+            mActivity.showTip(R.string.error_please_login_first, BaseScene.LENGTH_SHORT);
+        }
+    }
 }

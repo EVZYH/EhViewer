@@ -19,47 +19,35 @@ package com.hippo.ehviewer.ui;
 import android.graphics.drawable.Drawable;
 import android.view.View;
 import android.view.ViewGroup;
+
 import androidx.annotation.DrawableRes;
 import androidx.annotation.LayoutRes;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.Toolbar;
+
 import com.hippo.ehviewer.R;
-import com.hippo.ehviewer.Settings;
 
 public abstract class ToolbarActivity extends EhActivity {
 
     @Override
-    protected int getThemeResId(int theme) {
-        switch (theme) {
-            case Settings.THEME_LIGHT:
-            default:
-                return R.style.AppTheme_Toolbar;
-            case Settings.THEME_DARK:
-                return R.style.AppTheme_Toolbar_Dark;
-            case Settings.THEME_BLACK:
-                return R.style.AppTheme_Toolbar_Black;
-        }
-    }
-
-    @Override
     public void setContentView(@LayoutRes int layoutResID) {
         super.setContentView(R.layout.activity_toolbar);
-        getLayoutInflater().inflate(layoutResID, (ViewGroup) findViewById(R.id.content_panel), true);
-        setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
+        getLayoutInflater().inflate(layoutResID, findViewById(R.id.content_panel), true);
+        setSupportActionBar(findViewById(R.id.toolbar));
     }
 
     @Override
     public void setContentView(View view) {
         super.setContentView(R.layout.activity_toolbar);
         ((ViewGroup) findViewById(R.id.content_panel)).addView(view);
-        setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
+        setSupportActionBar(findViewById(R.id.toolbar));
     }
 
     @Override
     public void setContentView(View view, ViewGroup.LayoutParams params) {
         super.setContentView(R.layout.activity_toolbar);
         ((ViewGroup) findViewById(R.id.content_panel)).addView(view, params);
-        setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
+        setSupportActionBar(findViewById(R.id.toolbar));
     }
 
     public void setNavigationIcon(@DrawableRes int resId) {

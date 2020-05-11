@@ -29,10 +29,13 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.hippo.easyrecyclerview.EasyRecyclerView;
 import com.hippo.easyrecyclerview.MarginItemDecoration;
 import com.hippo.ehviewer.EhApplication;
@@ -55,6 +58,7 @@ import com.hippo.widget.recyclerview.AutoGridLayoutManager;
 import com.hippo.yorozuya.AssertUtils;
 import com.hippo.yorozuya.LayoutUtils;
 import com.hippo.yorozuya.ViewUtils;
+
 import java.util.ArrayList;
 import java.util.Locale;
 
@@ -128,7 +132,7 @@ public class GalleryPreviewsScene extends ToolbarScene implements EasyRecyclerVi
     @Nullable
     @Override
     public View onCreateView3(LayoutInflater inflater,
-            @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+                              @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         ContentLayout contentLayout = (ContentLayout) inflater.inflate(
                 R.layout.scene_gallery_previews, container, false);
         contentLayout.hideFastScroll();
@@ -208,7 +212,7 @@ public class GalleryPreviewsScene extends ToolbarScene implements EasyRecyclerVi
                 int pages = mHelper.getPages();
                 if (pages > 0 && mHelper.canGoTo()) {
                     GoToDialogHelper helper = new GoToDialogHelper(pages, mHelper.getPageForTop());
-                    AlertDialog dialog = new AlertDialog.Builder(context).setTitle(R.string.go_to)
+                    AlertDialog dialog = new MaterialAlertDialogBuilder(context).setTitle(R.string.go_to)
                             .setView(R.layout.dialog_go_to)
                             .setPositiveButton(android.R.string.ok, null)
                             .create();
@@ -241,6 +245,61 @@ public class GalleryPreviewsScene extends ToolbarScene implements EasyRecyclerVi
         return true;
     }
 
+    private void onGetPreviewSetSuccess(Pair<PreviewSet, Integer> result, int taskId) {
+        if (null != mHelper && mHelper.isCurrentTask(taskId) && null != mGalleryInfo) {
+            PreviewSet previewSet = result.first;
+            int size = previewSet.size();
+            ArrayList<GalleryPreview> list = new ArrayList<>(size);
+            for (int i = 0; i < size; i++) {
+                list.add(previewSet.getGalleryPreview(mGalleryInfo.gid, i));
+            }
+
+            mHelper.onGetPageData(taskId, result.second, 0, list);
+        }
+    }
+
+    private void onGetPreviewSetFailure(Exception e, int taskId) {
+        if (mHelper != null && mHelper.isCurrentTask(taskId)) {
+            mHelper.onGetException(taskId, e);
+        }
+    }
+
+    private static class GetPreviewSetListener extends EhCallback<GalleryPreviewsScene, Pair<PreviewSet, Integer>> {
+
+        private final int mTaskId;
+
+        public GetPreviewSetListener(Context context, int stageId, String sceneTag, int taskId) {
+            super(context, stageId, sceneTag);
+            mTaskId = taskId;
+        }
+
+        @Override
+        public void onSuccess(Pair<PreviewSet, Integer> result) {
+            GalleryPreviewsScene scene = getScene();
+            if (scene != null) {
+                scene.onGetPreviewSetSuccess(result, mTaskId);
+            }
+        }
+
+        @Override
+        public void onFailure(Exception e) {
+            GalleryPreviewsScene scene = getScene();
+            if (scene != null) {
+                scene.onGetPreviewSetFailure(e, mTaskId);
+            }
+        }
+
+        @Override
+        public void onCancel() {
+
+        }
+
+        @Override
+        public boolean isInstance(SceneFragment scene) {
+            return scene instanceof GalleryPreviewsScene;
+        }
+    }
+
     private class GalleryPreviewHolder extends RecyclerView.ViewHolder {
 
         public LoadImageView image;
@@ -249,8 +308,8 @@ public class GalleryPreviewsScene extends ToolbarScene implements EasyRecyclerVi
         public GalleryPreviewHolder(View itemView) {
             super(itemView);
 
-            image = (LoadImageView) itemView.findViewById(R.id.image);
-            text = (TextView) itemView.findViewById(R.id.text);
+            image = itemView.findViewById(R.id.image);
+            text = itemView.findViewById(R.id.text);
         }
     }
 
@@ -334,61 +393,6 @@ public class GalleryPreviewsScene extends ToolbarScene implements EasyRecyclerVi
         @Override
         protected boolean isDuplicate(GalleryPreview d1, GalleryPreview d2) {
             return false;
-        }
-    }
-
-    private void onGetPreviewSetSuccess(Pair<PreviewSet, Integer> result, int taskId) {
-        if (null != mHelper && mHelper.isCurrentTask(taskId) && null != mGalleryInfo) {
-            PreviewSet previewSet = result.first;
-            int size = previewSet.size();
-            ArrayList<GalleryPreview> list = new ArrayList<>(size);
-            for (int i = 0; i < size; i++) {
-                list.add(previewSet.getGalleryPreview(mGalleryInfo.gid, i));
-            }
-
-            mHelper.onGetPageData(taskId, result.second, 0, list);
-        }
-    }
-
-    private void onGetPreviewSetFailure(Exception e, int taskId) {
-        if (mHelper != null && mHelper.isCurrentTask(taskId)) {
-            mHelper.onGetException(taskId, e);
-        }
-    }
-
-    private static class GetPreviewSetListener extends EhCallback<GalleryPreviewsScene, Pair<PreviewSet, Integer>> {
-
-        private final int mTaskId;
-
-        public GetPreviewSetListener(Context context, int stageId, String sceneTag, int taskId) {
-            super(context, stageId, sceneTag);
-            mTaskId = taskId;
-        }
-
-        @Override
-        public void onSuccess(Pair<PreviewSet, Integer> result) {
-            GalleryPreviewsScene scene = getScene();
-            if (scene != null) {
-                scene.onGetPreviewSetSuccess(result, mTaskId);
-            }
-        }
-
-        @Override
-        public void onFailure(Exception e) {
-            GalleryPreviewsScene scene = getScene();
-            if (scene != null) {
-                scene.onGetPreviewSetFailure(e, mTaskId);
-            }
-        }
-
-        @Override
-        public void onCancel() {
-
-        }
-
-        @Override
-        public boolean isInstance(SceneFragment scene) {
-            return scene instanceof GalleryPreviewsScene;
         }
     }
 

@@ -18,15 +18,19 @@ package com.hippo.ehviewer;
 
 import android.content.Context;
 import android.os.Environment;
+
 import androidx.annotation.Nullable;
+
 import com.hippo.ehviewer.client.exception.ParseException;
 import com.hippo.util.ReadableTime;
 import com.hippo.yorozuya.FileUtils;
 import com.hippo.yorozuya.IOUtils;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 
 public class AppConfig {
 
@@ -49,7 +53,16 @@ public class AppConfig {
     @Nullable
     public static File getExternalAppDir() {
         if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
-            File dir = new File(Environment.getExternalStorageDirectory(), APP_DIRNAME);
+            File dir = sContext.getExternalFilesDir(null);
+            return FileUtils.ensureDirectory(dir) ? dir : null;
+        }
+        return null;
+    }
+
+    @Nullable
+    public static File getExternalMediaDir() {
+        if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
+            File dir = new File(sContext.getExternalMediaDirs()[0], APP_DIRNAME);
             return FileUtils.ensureDirectory(dir) ? dir : null;
         }
         return null;
@@ -60,6 +73,7 @@ public class AppConfig {
      */
     @Nullable
     public static File getDirInExternalAppDir(String filename) {
+
         File appFolder = getExternalAppDir();
         if (appFolder != null) {
             File dir = new File(appFolder, filename);
@@ -85,22 +99,17 @@ public class AppConfig {
 
     @Nullable
     public static File getExternalTempDir() {
-        return getDirInExternalAppDir(TEMP);
+        return sContext.getExternalCacheDir();
     }
 
     @Nullable
     public static File getExternalImageDir() {
-        return getDirInExternalAppDir(IMAGE);
+        return getExternalMediaDir();
     }
 
     @Nullable
     public static File getExternalParseErrorDir() {
         return getDirInExternalAppDir(PARSE_ERROR);
-    }
-
-    @Nullable
-    public static File getExternalLogcatDir() {
-        return getDirInExternalAppDir(LOGCAT);
     }
 
     @Nullable
@@ -147,11 +156,11 @@ public class AppConfig {
             String message = e.getMessage();
             String body = e.getBody();
             if (null != message) {
-                os.write(message.getBytes("utf-8"));
+                os.write(message.getBytes(StandardCharsets.UTF_8));
                 os.write('\n');
             }
             if (null != body) {
-                os.write(body.getBytes("utf-8"));
+                os.write(body.getBytes(StandardCharsets.UTF_8));
             }
             os.flush();
         } catch (IOException e1) {

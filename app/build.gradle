@@ -1,25 +1,19 @@
 apply plugin: 'com.android.application'
-
-if (file('google-services.json').exists()) {
-    apply plugin: 'com.google.gms.google-services'
-    apply plugin: 'io.fabric'
-}
+apply plugin: 'com.google.android.gms.oss-licenses-plugin'
 
 android {
-    compileSdkVersion 28
-
+    compileSdkVersion 29
     defaultConfig {
         applicationId "com.hippo.ehviewer"
-        minSdkVersion 14
-        targetSdkVersion 28
-        versionCode 104
-        versionName "1.7.3"
-        vectorDrawables.useSupportLibrary = true
+        minSdkVersion 21
+        targetSdkVersion 29
+        versionCode 105
+        versionName "1.7.4"
         resConfigs "zh", "zh-rCN", "zh-rHK", "zh-rTW",
                 "es", "ja", "ko", "fr", "de", "th"
         testOptions.unitTests.includeAndroidResources = true
         ndk {
-            abiFilters "armeabi-v7a", "x86"
+            abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
         }
     }
 
@@ -36,8 +30,9 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             buildConfigField 'String', 'FILE_PROVIDER_AUTHORITY', '"com.hippo.ehviewer.fileprovider"'
         }
         debug {
@@ -53,36 +48,24 @@ android {
     }
 }
 
-task copyNotice(type: Copy) {
-    from '../NOTICE.html'
-    into './src/main/assets'
-    finalizedBy ":daogenerator:executeDaoGenerator"
-}
-
 tasks.withType(JavaCompile) {
-    task -> task.dependsOn copyNotice
-}
-
-clean {
-    delete file('src/main/assets/NOTICE.html').absolutePath
+    task -> task.dependsOn ":daogenerator:executeDaoGenerator"
 }
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'androidx.appcompat:appcompat:1.0.2'
+    implementation 'androidx.appcompat:appcompat:1.2.0-alpha03'
+    implementation 'androidx.biometric:biometric:1.0.1'
+    implementation "androidx.browser:browser:1.2.0"
     implementation 'androidx.cardview:cardview:1.0.0'
-    implementation 'com.google.android.material:material:1.0.0'
-    implementation 'com.google.firebase:firebase-core:16.0.9'
-    implementation 'com.crashlytics.sdk.android:crashlytics:2.10.1'
-    implementation 'com.getkeepsafe.relinker:relinker:1.3.1'
+    implementation 'com.google.android.gms:play-services-oss-licenses:17.0.0'
+    implementation 'com.google.android.material:material:1.2.0-alpha05'
+    implementation 'com.getkeepsafe.relinker:relinker:1.4.1'
     implementation 'com.github.amlcurran.showcaseview:library:5.4.3'
-    implementation 'com.github.seven332.a7zip:extract-lite:d4ddec5793'
-    implementation 'com.github.seven332:android-recaptcha:2bbb3459a8'
+    implementation 'com.github.seven332.a7zip:extract-lite:1b21783'
     implementation 'com.github.seven332:android-resource:0.1.0'
-    implementation 'com.github.seven332:animator:0.1.0'
     implementation 'com.github.seven332:beerbelly:0.1.4'
     implementation 'com.github.seven332:conaco:0.1.5-eh'
-    implementation 'com.github.seven332:drawerlayout:ea2bb388f0'
     implementation 'com.github.seven332:easyrecyclerview:0.1.1'
     implementation 'com.github.seven332:glgallery:0.1.2'
     implementation 'com.github.seven332:glview:0.1.0'
@@ -90,7 +73,6 @@ dependencies {
     implementation 'com.github.seven332:hotspot:0.1.0'
     implementation 'com.github.seven332:image:0.1.12'
     implementation 'com.github.seven332:refreshlayout:0.1.0'
-    implementation 'com.github.seven332:ripple:0.1.2'
     implementation 'com.github.seven332:streampipe:0.1.0'
     implementation 'com.github.seven332:tuxiang:0.1.6'
     implementation 'com.github.seven332:unifile:9ec57bcd8f'
@@ -98,10 +80,12 @@ dependencies {
     implementation 'com.github.seven332:yorozuya-thread:0.1.1'
     implementation 'com.github.seven332:yorozuya-collect:0.1.4'
     implementation 'com.h6ah4i.android.widget.advrecyclerview:advrecyclerview:1.0.0'
-    implementation 'com.squareup.okhttp3:okhttp:3.12.3'
+    implementation 'com.squareup.okhttp3:okhttp:3.14.7'
+    implementation 'com.takisoft.preferencex:preferencex:1.1.0'
+    implementation 'tech.rectifier.preferencex-android:preferencex-simplemenu:88f93154b2'
     implementation 'org.ccil.cowan.tagsoup:tagsoup:1.2.1'
     implementation 'org.greenrobot:greendao:2.2.1'
-    implementation 'org.jsoup:jsoup:1.12.1'
+    implementation 'org.jsoup:jsoup:1.12.2'
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.robolectric:robolectric:4.2.1'
     testImplementation 'org.jooq:joor:0.9.6'

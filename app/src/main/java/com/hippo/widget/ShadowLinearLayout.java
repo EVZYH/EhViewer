@@ -17,21 +17,13 @@
 package com.hippo.widget;
 
 import android.content.Context;
-import android.graphics.Canvas;
-import android.graphics.Rect;
-import android.graphics.drawable.NinePatchDrawable;
-import android.os.Build;
 import android.util.AttributeSet;
 import android.view.ViewOutlineProvider;
 import android.widget.LinearLayout;
-import androidx.annotation.NonNull;
-import com.hippo.ehviewer.R;
+
 import com.hippo.yorozuya.LayoutUtils;
 
 public class ShadowLinearLayout extends LinearLayout {
-
-    private NinePatchDrawable mShadow;
-    private final Rect mShadowPaddings = new Rect();
 
     public ShadowLinearLayout(Context context) {
         super(context);
@@ -49,47 +41,8 @@ public class ShadowLinearLayout extends LinearLayout {
     }
 
     private void init(Context context) {
-        // TODO not only 2dp
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            setOutlineProvider(ViewOutlineProvider.BOUNDS);
-            setElevation(LayoutUtils.dp2pix(context, 2));
-        } else {
-            setShadow((NinePatchDrawable) context.getResources().getDrawable(R.drawable.shadow_2dp)); // TODO draktheme
-        }
+        setOutlineProvider(ViewOutlineProvider.BOUNDS);
+        setElevation(LayoutUtils.dp2pix(context, 2));
     }
 
-    private void setShadow(NinePatchDrawable shadow) {
-        mShadow = shadow;
-        mShadow.getPadding(mShadowPaddings);
-        updateShadowBounds();
-        setWillNotDraw(false);
-    }
-
-    private void updateShadowBounds() {
-        NinePatchDrawable shadow = mShadow;
-        if (shadow == null) {
-            return;
-        }
-
-        int width = getWidth();
-        int height = getHeight();
-        Rect paddings = mShadowPaddings;
-        if (width != 0 && height != 0) {
-            shadow.setBounds(-paddings.left, -paddings.top, width + paddings.right, height + paddings.bottom);
-        }
-    }
-
-    @Override
-    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-        super.onLayout(changed, left, top, right, bottom);
-        updateShadowBounds();
-    }
-
-    @Override
-    public void draw(@NonNull Canvas canvas) {
-        if (mShadow != null) {
-            mShadow.draw(canvas);
-        }
-        super.draw(canvas);
-    }
 }

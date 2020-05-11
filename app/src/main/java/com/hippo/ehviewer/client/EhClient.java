@@ -18,15 +18,18 @@ package com.hippo.ehviewer.client;
 
 import android.content.Context;
 import android.os.AsyncTask;
+
 import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.client.exception.CancelledException;
 import com.hippo.util.ExceptionUtils;
 import com.hippo.util.IoThreadPoolExecutor;
 import com.hippo.yorozuya.SimpleHandler;
+
 import java.io.File;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+
 import okhttp3.Call;
 import okhttp3.OkHttpClient;
 
@@ -70,14 +73,22 @@ public class EhClient {
         }
     }
 
+    public interface Callback<E> {
+
+        void onSuccess(E result);
+
+        void onFailure(Exception e);
+
+        void onCancel();
+    }
+
     public class Task extends AsyncTask<Object, Void, Object> {
 
         private final int mMethod;
-        private Callback mCallback;
-        private EhConfig mEhConfig;
-
         private final AtomicReference<Call> mCall = new AtomicReference<>();
         private final AtomicBoolean mStop = new AtomicBoolean();
+        private Callback mCallback;
+        private EhConfig mEhConfig;
 
         public Task(int method, Callback callback, EhConfig ehConfig) {
             mMethod = method;
@@ -105,13 +116,7 @@ public class EhClient {
 
                 if (mCallback != null) {
                     // TODO Avoid new runnable
-                    final Callback finalCallback = mCallback;
-                    SimpleHandler.getInstance().post(new Runnable() {
-                        @Override
-                        public void run() {
-                            finalCallback.onCancel();
-                        }
-                    });
+                    SimpleHandler.getInstance().post(mCallback::onCancel);
                 }
 
                 Status status = getStatus();
@@ -133,7 +138,6 @@ public class EhClient {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
         protected Object doInBackground(Object... params) {
             try {
                 switch (mMethod) {
@@ -201,14 +205,5 @@ public class EhClient {
             mEhConfig = null;
             mCall.lazySet(null);
         }
-    }
-
-    public interface Callback<E> {
-
-        void onSuccess(E result);
-
-        void onFailure(Exception e);
-
-        void onCancel();
     }
 }

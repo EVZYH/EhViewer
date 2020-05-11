@@ -17,7 +17,6 @@
 package com.hippo.ehviewer.ui.scene;
 
 import android.content.Context;
-import android.content.DialogInterface;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.NinePatchDrawable;
 import android.os.Bundle;
@@ -25,10 +24,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.h6ah4i.android.widget.advrecyclerview.animator.DraggableItemAnimator;
 import com.h6ah4i.android.widget.advrecyclerview.animator.GeneralItemAnimator;
 import com.h6ah4i.android.widget.advrecyclerview.draggable.DraggableItemAdapter;
@@ -43,6 +44,7 @@ import com.hippo.util.DrawableManager;
 import com.hippo.view.ViewTransition;
 import com.hippo.yorozuya.AssertUtils;
 import com.hippo.yorozuya.ViewUtils;
+
 import java.util.List;
 
 public final class QuickSearchScene extends ToolbarScene {
@@ -75,11 +77,9 @@ public final class QuickSearchScene extends ToolbarScene {
         mQuickSearchList = null;
     }
 
-    @SuppressWarnings("deprecation")
-    @Nullable
     @Override
     public View onCreateView3(LayoutInflater inflater,
-            @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+                              @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.scene_label_list, container, false);
 
         mRecyclerView = (EasyRecyclerView) ViewUtils.$$(view, R.id.recycler_view);
@@ -175,25 +175,19 @@ public final class QuickSearchScene extends ToolbarScene {
             }
 
             final QuickSearch quickSearch = mQuickSearchList.get(position);
-            new AlertDialog.Builder(context)
-                .setTitle(R.string.delete_quick_search_title)
-                .setMessage(getString(R.string.delete_quick_search_message, quickSearch.name))
-                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
+            new MaterialAlertDialogBuilder(context)
+                    .setTitle(R.string.delete_quick_search_title)
+                    .setMessage(getString(R.string.delete_quick_search_message, quickSearch.name))
+                    .setPositiveButton(android.R.string.ok, (dialog, which) -> {
                         EhDB.deleteQuickSearch(quickSearch);
                         mQuickSearchList.remove(position);
-                    }
-                })
-                .setOnDismissListener(new DialogInterface.OnDismissListener() {
-                    @Override
-                    public void onDismiss(DialogInterface dialog) {
+                    })
+                    .setOnDismissListener(dialog -> {
                         if (null != mAdapter) {
                             mAdapter.notifyDataSetChanged();
                         }
                         updateView();
-                    }
-                }).show();
+                    }).show();
         }
     }
 
@@ -259,9 +253,11 @@ public final class QuickSearchScene extends ToolbarScene {
         }
 
         @Override
-        public void onItemDragStarted(int position) { }
+        public void onItemDragStarted(int position) {
+        }
 
         @Override
-        public void onItemDragFinished(int fromPosition, int toPosition, boolean result) { }
+        public void onItemDragFinished(int fromPosition, int toPosition, boolean result) {
+        }
     }
 }

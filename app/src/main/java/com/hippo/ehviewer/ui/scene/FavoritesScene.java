@@ -21,9 +21,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.Resources;
-import android.graphics.Color;
 import android.graphics.Point;
-import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.InputType;
@@ -39,6 +37,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -47,9 +46,11 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.github.amlcurran.showcaseview.ShowcaseView;
 import com.github.amlcurran.showcaseview.SimpleShowcaseEventListener;
 import com.github.amlcurran.showcaseview.targets.PointTarget;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.hippo.android.resource.AttrResources;
 import com.hippo.annotation.Implemented;
@@ -77,7 +78,6 @@ import com.hippo.ehviewer.widget.EhDrawerLayout;
 import com.hippo.ehviewer.widget.GalleryInfoContentHelper;
 import com.hippo.ehviewer.widget.SearchBar;
 import com.hippo.refreshlayout.RefreshLayout;
-import com.hippo.ripple.Ripple;
 import com.hippo.scene.Announcer;
 import com.hippo.scene.SceneFragment;
 import com.hippo.util.AppHelper;
@@ -89,13 +89,14 @@ import com.hippo.yorozuya.AssertUtils;
 import com.hippo.yorozuya.ObjectUtils;
 import com.hippo.yorozuya.SimpleHandler;
 import com.hippo.yorozuya.ViewUtils;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 // TODO Get favorite, modify favorite, add favorite, what a mess!
 public class FavoritesScene extends BaseScene implements
-        EasyRecyclerView.OnItemClickListener, EasyRecyclerView.OnItemLongClickListener,
+        EasyRecyclerView.OnItemClickListener,
         FastScroller.OnDragHandlerListener, SearchBarMover.Helper, SearchBar.Helper,
         FabLayout.OnClickFabListener, FabLayout.OnExpandListener,
         EasyRecyclerView.CustomChoiceListener {
@@ -106,7 +107,10 @@ public class FavoritesScene extends BaseScene implements
     private static final String KEY_SEARCH_MODE = "search_mode";
     private static final String KEY_HAS_FIRST_REFRESH = "has_first_refresh";
     private static final String KEY_FAV_COUNT_ARRAY = "fav_count_array";
-
+    // For modify action
+    private final List<GalleryInfo> mModifyGiList = new ArrayList<>();
+    public int current; // -1 for error
+    public int limit; // -1 for error
     @Nullable
     @ViewLifeCircle
     private EasyRecyclerView mRecyclerView;
@@ -116,7 +120,6 @@ public class FavoritesScene extends BaseScene implements
     @Nullable
     @ViewLifeCircle
     private FabLayout mFabLayout;
-
     @Nullable
     @ViewLifeCircle
     private FavoritesAdapter mAdapter;
@@ -130,10 +133,8 @@ public class FavoritesScene extends BaseScene implements
     @ViewLifeCircle
     private DrawerArrowDrawable mLeftDrawable;
     private AddDeleteDrawable mActionFabDrawable;
-
     @Nullable
     private EhDrawerLayout mDrawerLayout;
-
     @Nullable
     @DrawerLifeCircle
     private FavDrawerAdapter mDrawerAdapter;
@@ -149,13 +150,8 @@ public class FavoritesScene extends BaseScene implements
     @Nullable
     @WholeLifeCircle
     private FavListUrlBuilder mUrlBuilder;
-
-    public int current; // -1 for error
-    public int limit; // -1 for error
-
     private int mFavLocalCount = 0;
     private int mFavCountSum = 0;
-
     private boolean mHasFirstRefresh;
     private boolean mSearchMode;
     // Avoid unnecessary search bar update
@@ -167,11 +163,21 @@ public class FavoritesScene extends BaseScene implements
     // For modify action
     private int mModifyFavCat;
     // For modify action
-    private final List<GalleryInfo> mModifyGiList = new ArrayList<>();
-    // For modify action
     private boolean mModifyAdd;
 
     private ShowcaseView mShowcaseView;
+    private Runnable showNormalFabsRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (mFabLayout != null) {
+                mFabLayout.setSecondaryFabVisibilityAt(0, true);
+                mFabLayout.setSecondaryFabVisibilityAt(1, true);
+                mFabLayout.setSecondaryFabVisibilityAt(2, false);
+                mFabLayout.setSecondaryFabVisibilityAt(3, false);
+                mFabLayout.setSecondaryFabVisibilityAt(4, false);
+            }
+        }
+    };
 
     @Override
     public int getNavCheckedItem() {
@@ -243,9 +249,9 @@ public class FavoritesScene extends BaseScene implements
     @Nullable
     @Override
     public View onCreateView2(LayoutInflater inflater,
-            @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+                              @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.scene_favorites, container, false);
-        ContentLayout contentLayout = (ContentLayout) view.findViewById(R.id.content_layout);
+        ContentLayout contentLayout = view.findViewById(R.id.content_layout);
         MainActivity activity = getActivity2();
         AssertUtils.assertNotNull(activity);
         mDrawerLayout = (EhDrawerLayout) ViewUtils.$$(activity, R.id.draw_view);
@@ -266,11 +272,12 @@ public class FavoritesScene extends BaseScene implements
         contentLayout.getFastScroller().setOnDragHandlerListener(this);
 
         mAdapter = new FavoritesAdapter(inflater, resources, mRecyclerView, Settings.getListMode());
-        mRecyclerView.setSelector(Ripple.generateRippleDrawable(context, !AttrResources.getAttrBoolean(context, R.attr.isLightTheme), new ColorDrawable(Color.TRANSPARENT)));
-        mRecyclerView.setDrawSelectorOnTop(true);
+        //mRecyclerView.setSelector(Ripple.generateRippleDrawable(context, !AttrResources.getAttrBoolean(context, R.attr.isLightTheme), new ColorDrawable(Color.TRANSPARENT)));
+        //mRecyclerView.setDrawSelectorOnTop(true);
         mRecyclerView.setClipToPadding(false);
-        mRecyclerView.setOnItemClickListener(this);
-        mRecyclerView.setOnItemLongClickListener(this);
+        mRecyclerView.setClipChildren(false);
+        //mRecyclerView.setOnItemClickListener(this);
+        //mRecyclerView.setOnItemLongClickListener(this);
         mRecyclerView.setChoiceMode(EasyRecyclerView.CHOICE_MODE_MULTIPLE_CUSTOM);
         mRecyclerView.setCustomCheckedListener(this);
 
@@ -327,7 +334,7 @@ public class FavoritesScene extends BaseScene implements
                 .withMaterialShowcase()
                 .setStyle(R.style.Guide)
                 .setTarget(new PointTarget(point.x, point.y / 3))
-                .blockAllTouches()
+                .hideOnTouchOutside()
                 .setContentTitle(R.string.guide_collections_title)
                 .setContentText(R.string.guide_collections_text)
                 .replaceEndButton(R.layout.button_guide)
@@ -426,72 +433,9 @@ public class FavoritesScene extends BaseScene implements
         mOldKeyword = null;
     }
 
-    private class FavDrawerHolder extends RecyclerView.ViewHolder {
-
-        private final TextView key;
-        private final TextView value;
-
-        private FavDrawerHolder(View itemView) {
-            super(itemView);
-            key = (TextView) ViewUtils.$$(itemView, R.id.key);
-            value = (TextView) ViewUtils.$$(itemView, R.id.value);
-        }
-    }
-
-    private class FavDrawerAdapter extends RecyclerView.Adapter<FavDrawerHolder> {
-
-        private final LayoutInflater mInflater;
-
-        private FavDrawerAdapter(LayoutInflater inflater) {
-            mInflater = inflater;
-        }
-
-        @Override
-        public int getItemViewType(int position) {
-            return position;
-        }
-
-        @NonNull
-        @Override
-        public FavDrawerHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            return new FavDrawerHolder(mInflater.inflate(R.layout.item_drawer_favorites, parent, false));
-        }
-
-        @Override
-        @SuppressLint("SetTextI18n")
-        public void onBindViewHolder(@NonNull FavDrawerHolder holder, int position) {
-            if (0 == position) {
-                holder.key.setText(R.string.local_favorites);
-                holder.value.setText(Integer.toString(mFavLocalCount));
-                holder.itemView.setEnabled(true);
-            } else if (1 == position){
-                holder.key.setText(R.string.cloud_favorites);
-                holder.value.setText(Integer.toString(mFavCountSum));
-                holder.itemView.setEnabled(true);
-            } else {
-                if (null == mFavCatArray || null == mFavCountArray ||
-                        mFavCatArray.length < (position - 1) ||
-                        mFavCountArray.length < (position - 1)) {
-                    return;
-                }
-                holder.key.setText(mFavCatArray[position - 2]);
-                holder.value.setText(Integer.toString(mFavCountArray[position - 2]));
-                holder.itemView.setEnabled(true);
-            }
-        }
-
-        @Override
-        public int getItemCount() {
-            if (null == mFavCatArray) {
-                return 2;
-            }
-            return 12;
-        }
-    }
-
     @Override
     public View onCreateDrawerView(LayoutInflater inflater,
-            @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+                                   @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.drawer_list_rv, container, false);
         final Context context = getContext2();
         Toolbar toolbar = (Toolbar) ViewUtils.$$(view, R.id.toolbar);
@@ -511,21 +455,16 @@ public class FavoritesScene extends BaseScene implements
                         items[1] = getString(R.string.local_favorites);
                         String[] favCat = Settings.getFavCat();
                         System.arraycopy(favCat, 0, items, 2, 10);
-                        new AlertDialog.Builder(context)
+                        new MaterialAlertDialogBuilder(context)
                                 .setTitle(R.string.default_favorites_collection)
-                                .setItems(items, new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        Settings.putDefaultFavSlot(which - 2);
-                                    }
-                                }).show();
+                                .setItems(items, (dialog, which) -> Settings.putDefaultFavSlot(which - 2)).show();
                         return true;
                 }
                 return false;
             }
         });
 
-        EasyRecyclerView recyclerView = (EasyRecyclerView) view.findViewById(R.id.recycler_view_drawer);
+        EasyRecyclerView recyclerView = view.findViewById(R.id.recycler_view_drawer);
         recyclerView.setLayoutManager(new LinearLayoutManager(context));
         recyclerView.addItemDecoration(new DividerItemDecoration(context, DividerItemDecoration.VERTICAL));
 
@@ -583,7 +522,7 @@ public class FavoritesScene extends BaseScene implements
     @Override
     @Implemented(EasyRecyclerView.OnItemClickListener.class)
     public boolean onItemClick(EasyRecyclerView parent, View view, int position, long id) {
-        if (mDrawerLayout != null && mDrawerLayout.isDrawerOpen(Gravity.RIGHT)){
+        if (mDrawerLayout != null && mDrawerLayout.isDrawerOpen(Gravity.RIGHT)) {
             // Skip if in search mode
             if (mRecyclerView != null && mRecyclerView.isInCustomChoice()) {
                 return true;
@@ -637,9 +576,7 @@ public class FavoritesScene extends BaseScene implements
         return true;
     }
 
-    @Override
-    @Implemented(EasyRecyclerView.OnItemLongClickListener.class)
-    public boolean onItemLongClick(EasyRecyclerView parent, View view, int position, long id) {
+    public boolean onItemLongClick(View view, int position) {
         // Can not into
         if (mRecyclerView != null && !mSearchMode) {
             if (!mRecyclerView.isInCustomChoice()) {
@@ -781,8 +718,8 @@ public class FavoritesScene extends BaseScene implements
         final EditTextDialogBuilder builder = new EditTextDialogBuilder(context, null, hint);
         builder.getEditText().setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
         final AlertDialog dialog = builder.setTitle(R.string.go_to)
-            .setPositiveButton(android.R.string.ok, null)
-            .show();
+                .setPositiveButton(android.R.string.ok, null)
+                .show();
         dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(v -> {
             if (null == mHelper) {
                 dialog.dismiss();
@@ -793,7 +730,7 @@ public class FavoritesScene extends BaseScene implements
             int goTo;
             try {
                 goTo = Integer.parseInt(text) - 1;
-            } catch (NumberFormatException e){
+            } catch (NumberFormatException e) {
                 builder.setError(getString(R.string.error_invalid_number));
                 return;
             }
@@ -856,7 +793,7 @@ public class FavoritesScene extends BaseScene implements
             }
             case 3: { // Delete
                 DeleteDialogHelper helper = new DeleteDialogHelper();
-                new AlertDialog.Builder(context)
+                new MaterialAlertDialogBuilder(context)
                         .setTitle(R.string.delete_favorites_dialog_title)
                         .setMessage(getString(R.string.delete_favorites_dialog_message, mModifyGiList.size()))
                         .setPositiveButton(android.R.string.ok, helper)
@@ -870,7 +807,7 @@ public class FavoritesScene extends BaseScene implements
                 String[] array = new String[11];
                 array[0] = getString(R.string.local_favorites);
                 System.arraycopy(Settings.getFavCat(), 0, array, 1, 10);
-                new AlertDialog.Builder(context)
+                new MaterialAlertDialogBuilder(context)
                         .setTitle(R.string.move_favorites_dialog_title)
                         .setItems(array, helper)
                         .setOnCancelListener(helper)
@@ -879,19 +816,6 @@ public class FavoritesScene extends BaseScene implements
             }
         }
     }
-
-    private Runnable showNormalFabsRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if (mFabLayout != null) {
-                mFabLayout.setSecondaryFabVisibilityAt(0, true);
-                mFabLayout.setSecondaryFabVisibilityAt(1, true);
-                mFabLayout.setSecondaryFabVisibilityAt(2, false);
-                mFabLayout.setSecondaryFabVisibilityAt(3, false);
-                mFabLayout.setSecondaryFabVisibilityAt(4, false);
-            }
-        }
-    };
 
     private void showNormalFabs() {
         // Delay showing normal fabs to avoid mutation
@@ -947,13 +871,14 @@ public class FavoritesScene extends BaseScene implements
     @Override
     @Implemented(EasyRecyclerView.CustomChoiceListener.class)
     public void onItemCheckedStateChanged(EasyRecyclerView view, int position, long id, boolean checked) {
+
         if (view.getCheckedItemCount() == 0) {
             view.outOfCustomChoiceMode();
         }
     }
 
     private void enterSearchMode(boolean animation) {
-        if (mSearchMode ||mSearchBar == null || mSearchBarMover == null || mLeftDrawable == null) {
+        if (mSearchMode || mSearchBar == null || mSearchBarMover == null || mLeftDrawable == null) {
             return;
         }
         mSearchMode = true;
@@ -977,13 +902,13 @@ public class FavoritesScene extends BaseScene implements
                 mHelper.isCurrentTask(taskId)) {
 
             if (mFavCatArray != null) {
-                System.arraycopy(result.catArray, 0, mFavCatArray, 0,10);
+                System.arraycopy(result.catArray, 0, mFavCatArray, 0, 10);
             }
 
             mFavCountArray = result.countArray;
-            if (mFavCountArray != null){
+            if (mFavCountArray != null) {
                 mFavCountSum = 0;
-                for (int i = 0; i < 10; i++ ){
+                for (int i = 0; i < 10; i++) {
                     mFavCountSum = mFavCountSum + mFavCountArray[i];
                 }
                 Settings.putFavCloudCount(mFavCountSum);
@@ -1028,6 +953,166 @@ public class FavoritesScene extends BaseScene implements
                     mDrawerAdapter.notifyDataSetChanged();
                 }
             }
+        }
+    }
+
+    private static class AddFavoritesListener extends EhCallback<FavoritesScene, Void> {
+
+        private final int mTaskId;
+        private final String mKeyword;
+        private final List<GalleryInfo> mBackup;
+
+        private AddFavoritesListener(Context context, int stageId,
+                                     String sceneTag, int taskId, String keyword, List<GalleryInfo> backup) {
+            super(context, stageId, sceneTag);
+            mTaskId = taskId;
+            mKeyword = keyword;
+            mBackup = backup;
+        }
+
+        @Override
+        public void onSuccess(Void result) {
+            FavoritesScene scene = getScene();
+            if (scene != null) {
+                scene.onGetFavoritesLocal(mKeyword, mTaskId);
+            }
+        }
+
+        @Override
+        public void onFailure(Exception e) {
+            // TODO It's a failure, add all of backup back to db.
+            // But how to known which one is failed?
+            EhDB.putLocalFavorites(mBackup);
+
+            FavoritesScene scene = getScene();
+            if (scene != null) {
+                scene.onGetFavoritesLocal(mKeyword, mTaskId);
+            }
+        }
+
+        @Override
+        public void onCancel() {
+        }
+
+        @Override
+        public boolean isInstance(SceneFragment scene) {
+            return scene instanceof FavoritesScene;
+        }
+    }
+
+    private static class GetFavoritesListener extends EhCallback<FavoritesScene, FavoritesParser.Result> {
+
+        private final int mTaskId;
+        // Local fav is shown now, but operation need be done for cloud fav
+        private final boolean mLocal;
+        private final String mKeyword;
+
+        private GetFavoritesListener(Context context, int stageId,
+                                     String sceneTag, int taskId, boolean local, String keyword) {
+            super(context, stageId, sceneTag);
+            mTaskId = taskId;
+            mLocal = local;
+            mKeyword = keyword;
+        }
+
+        @Override
+        public void onSuccess(FavoritesParser.Result result) {
+            // Put fav cat
+            Settings.putFavCat(result.catArray);
+            Settings.putFavCount(result.countArray);
+            FavoritesScene scene = getScene();
+            if (scene != null) {
+                if (mLocal) {
+                    scene.onGetFavoritesLocal(mKeyword, mTaskId);
+                } else {
+                    scene.onGetFavoritesSuccess(result, mTaskId);
+                }
+            }
+        }
+
+        @Override
+        public void onFailure(Exception e) {
+            FavoritesScene scene = getScene();
+            if (scene != null) {
+                if (mLocal) {
+                    e.printStackTrace();
+                    scene.onGetFavoritesLocal(mKeyword, mTaskId);
+                } else {
+                    scene.onGetFavoritesFailure(e, mTaskId);
+                }
+            }
+        }
+
+        @Override
+        public void onCancel() {
+        }
+
+        @Override
+        public boolean isInstance(SceneFragment scene) {
+            return scene instanceof FavoritesScene;
+        }
+    }
+
+    private class FavDrawerHolder extends RecyclerView.ViewHolder {
+
+        private final TextView key;
+        private final TextView value;
+
+        private FavDrawerHolder(View itemView) {
+            super(itemView);
+            key = (TextView) ViewUtils.$$(itemView, R.id.key);
+            value = (TextView) ViewUtils.$$(itemView, R.id.value);
+        }
+    }
+
+    private class FavDrawerAdapter extends RecyclerView.Adapter<FavDrawerHolder> {
+
+        private final LayoutInflater mInflater;
+
+        private FavDrawerAdapter(LayoutInflater inflater) {
+            mInflater = inflater;
+        }
+
+        @Override
+        public int getItemViewType(int position) {
+            return position;
+        }
+
+        @NonNull
+        @Override
+        public FavDrawerHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            return new FavDrawerHolder(mInflater.inflate(R.layout.item_drawer_favorites, parent, false));
+        }
+
+        @Override
+        @SuppressLint("SetTextI18n")
+        public void onBindViewHolder(@NonNull FavDrawerHolder holder, int position) {
+            if (0 == position) {
+                holder.key.setText(R.string.local_favorites);
+                holder.value.setText(Integer.toString(mFavLocalCount));
+                holder.itemView.setEnabled(true);
+            } else if (1 == position) {
+                holder.key.setText(R.string.cloud_favorites);
+                holder.value.setText(Integer.toString(mFavCountSum));
+                holder.itemView.setEnabled(true);
+            } else {
+                if (null == mFavCatArray || null == mFavCountArray ||
+                        mFavCatArray.length < (position - 1) ||
+                        mFavCountArray.length < (position - 1)) {
+                    return;
+                }
+                holder.key.setText(mFavCatArray[position - 2]);
+                holder.value.setText(Integer.toString(mFavCountArray[position - 2]));
+                holder.itemView.setEnabled(true);
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            if (null == mFavCatArray) {
+                return 2;
+            }
+            return 12;
         }
     }
 
@@ -1121,13 +1206,23 @@ public class FavoritesScene extends BaseScene implements
     private class FavoritesAdapter extends GalleryAdapter {
 
         public FavoritesAdapter(@NonNull LayoutInflater inflater, @NonNull Resources resources,
-                @NonNull RecyclerView recyclerView, int type) {
+                                @NonNull RecyclerView recyclerView, int type) {
             super(inflater, resources, recyclerView, type, false);
         }
 
         @Override
         public int getItemCount() {
             return null != mHelper ? mHelper.size() : 0;
+        }
+
+        @Override
+        void onItemClick(View view, int position) {
+            FavoritesScene.this.onItemClick(null, view, position, 0);
+        }
+
+        @Override
+        boolean onItemLongClick(View view, int position) {
+            return FavoritesScene.this.onItemLongClick(view, position);
         }
 
         @Nullable
@@ -1142,7 +1237,7 @@ public class FavoritesScene extends BaseScene implements
         @Override
         protected void getPageData(final int taskId, int type, int page) {
             MainActivity activity = getActivity2();
-            if (null == activity || null == mUrlBuilder || null == mClient ) {
+            if (null == activity || null == mUrlBuilder || null == mClient) {
                 return;
             }
 
@@ -1264,101 +1359,6 @@ public class FavoritesScene extends BaseScene implements
                     mSearchBarMover.showSearchBar();
                 }
             }
-        }
-    }
-
-    private static class AddFavoritesListener extends EhCallback<FavoritesScene, Void> {
-
-        private final int mTaskId;
-        private final String mKeyword;
-        private final List<GalleryInfo> mBackup;
-
-        private AddFavoritesListener(Context context, int stageId,
-                String sceneTag, int taskId, String keyword, List<GalleryInfo> backup) {
-            super(context, stageId, sceneTag);
-            mTaskId = taskId;
-            mKeyword = keyword;
-            mBackup = backup;
-        }
-
-        @Override
-        public void onSuccess(Void result) {
-            FavoritesScene scene = getScene();
-            if (scene != null) {
-                scene.onGetFavoritesLocal(mKeyword, mTaskId);
-            }
-        }
-
-        @Override
-        public void onFailure(Exception e) {
-            // TODO It's a failure, add all of backup back to db.
-            // But how to known which one is failed?
-            EhDB.putLocalFavorites(mBackup);
-
-            FavoritesScene scene = getScene();
-            if (scene != null) {
-                scene.onGetFavoritesLocal(mKeyword, mTaskId);
-            }
-        }
-
-        @Override
-        public void onCancel() {}
-
-        @Override
-        public boolean isInstance(SceneFragment scene) {
-            return scene instanceof FavoritesScene;
-        }
-    }
-
-    private static class GetFavoritesListener extends EhCallback<FavoritesScene, FavoritesParser.Result> {
-
-        private final int mTaskId;
-        // Local fav is shown now, but operation need be done for cloud fav
-        private final boolean mLocal;
-        private final String mKeyword;
-
-        private GetFavoritesListener(Context context, int stageId,
-                String sceneTag, int taskId, boolean local, String keyword) {
-            super(context, stageId, sceneTag);
-            mTaskId = taskId;
-            mLocal = local;
-            mKeyword = keyword;
-        }
-
-        @Override
-        public void onSuccess(FavoritesParser.Result result) {
-            // Put fav cat
-            Settings.putFavCat(result.catArray);
-            Settings.putFavCount(result.countArray);
-            FavoritesScene scene = getScene();
-            if (scene != null) {
-                if (mLocal) {
-                    scene.onGetFavoritesLocal(mKeyword, mTaskId);
-                } else {
-                    scene.onGetFavoritesSuccess(result, mTaskId);
-                }
-            }
-        }
-
-        @Override
-        public void onFailure(Exception e) {
-            FavoritesScene scene = getScene();
-            if (scene != null) {
-                if (mLocal) {
-                    e.printStackTrace();
-                    scene.onGetFavoritesLocal(mKeyword, mTaskId);
-                } else {
-                    scene.onGetFavoritesFailure(e, mTaskId);
-                }
-            }
-        }
-
-        @Override
-        public void onCancel() {}
-
-        @Override
-        public boolean isInstance(SceneFragment scene) {
-            return scene instanceof FavoritesScene;
         }
     }
 }

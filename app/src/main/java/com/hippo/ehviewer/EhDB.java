@@ -20,9 +20,12 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.net.Uri;
 import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
 import com.hippo.ehviewer.client.data.GalleryInfo;
 import com.hippo.ehviewer.client.data.ListUrlBuilder;
 import com.hippo.ehviewer.dao.DaoMaster;
@@ -47,9 +50,7 @@ import com.hippo.util.SqlUtils;
 import com.hippo.yorozuya.IOUtils;
 import com.hippo.yorozuya.ObjectUtils;
 import com.hippo.yorozuya.collect.SparseJLArray;
-import de.greenrobot.dao.AbstractDao;
-import de.greenrobot.dao.query.CloseableListIterator;
-import de.greenrobot.dao.query.LazyList;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -59,34 +60,20 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import de.greenrobot.dao.AbstractDao;
+import de.greenrobot.dao.query.CloseableListIterator;
+import de.greenrobot.dao.query.LazyList;
+
 public class EhDB {
 
     private static final String TAG = EhDB.class.getSimpleName();
 
-    private static final int MAX_HISTORY_COUNT = 100;
+    private static final int MAX_HISTORY_COUNT = 200;
 
     private static DaoSession sDaoSession;
 
     private static boolean sHasOldDB;
     private static boolean sNewDB;
-
-    private static class DBOpenHelper extends DaoMaster.OpenHelper {
-
-        public DBOpenHelper(Context context, String name, SQLiteDatabase.CursorFactory factory) {
-            super(context, name, factory);
-        }
-
-        @Override
-        public void onCreate(SQLiteDatabase db) {
-            super.onCreate(db);
-            sNewDB = true;
-        }
-
-        @Override
-        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            upgradeDB(db, oldVersion);
-        }
-    }
 
     private static void upgradeDB(SQLiteDatabase db, int oldVersion) {
         switch (oldVersion) {
@@ -94,10 +81,10 @@ public class EhDB {
                 FilterDao.createTable(db, true);
             case 2: // 2 to 3, add ENABLE column to table FILTER
                 db.execSQL("CREATE TABLE " + "\"FILTER2\" (" +
-                    "\"_id\" INTEGER PRIMARY KEY ," +
-                    "\"MODE\" INTEGER NOT NULL ," +
-                    "\"TEXT\" TEXT," +
-                    "\"ENABLE\" INTEGER);");
+                        "\"_id\" INTEGER PRIMARY KEY ," +
+                        "\"MODE\" INTEGER NOT NULL ," +
+                        "\"TEXT\" TEXT," +
+                        "\"ENABLE\" INTEGER);");
                 db.execSQL("INSERT INTO \"FILTER2\" (" +
                         "_id, MODE, TEXT, ENABLE)" +
                         "SELECT _id, MODE, TEXT, 1 FROM FILTER;");
@@ -105,45 +92,21 @@ public class EhDB {
                 db.execSQL("ALTER TABLE FILTER2 RENAME TO FILTER");
             case 3: // 3 to 4, add PAGE_FROM and PAGE_TO column to QUICK_SEARCH
                 db.execSQL("CREATE TABLE " + "\"QUICK_SEARCH2\" (" +
-                    "\"_id\" INTEGER PRIMARY KEY ," +
-                    "\"NAME\" TEXT," +
-                    "\"MODE\" INTEGER NOT NULL ," +
-                    "\"CATEGORY\" INTEGER NOT NULL ," +
-                    "\"KEYWORD\" TEXT," +
-                    "\"ADVANCE_SEARCH\" INTEGER NOT NULL ," +
-                    "\"MIN_RATING\" INTEGER NOT NULL ," +
-                    "\"PAGE_FROM\" INTEGER NOT NULL ," +
-                    "\"PAGE_TO\" INTEGER NOT NULL ," +
-                    "\"TIME\" INTEGER NOT NULL );");
+                        "\"_id\" INTEGER PRIMARY KEY ," +
+                        "\"NAME\" TEXT," +
+                        "\"MODE\" INTEGER NOT NULL ," +
+                        "\"CATEGORY\" INTEGER NOT NULL ," +
+                        "\"KEYWORD\" TEXT," +
+                        "\"ADVANCE_SEARCH\" INTEGER NOT NULL ," +
+                        "\"MIN_RATING\" INTEGER NOT NULL ," +
+                        "\"PAGE_FROM\" INTEGER NOT NULL ," +
+                        "\"PAGE_TO\" INTEGER NOT NULL ," +
+                        "\"TIME\" INTEGER NOT NULL );");
                 db.execSQL("INSERT INTO \"QUICK_SEARCH2\" (" +
-                    "_id, NAME, MODE, CATEGORY, KEYWORD, ADVANCE_SEARCH, MIN_RATING, PAGE_FROM, PAGE_TO, TIME)" +
-                    "SELECT _id, NAME, MODE, CATEGORY, KEYWORD, ADVANCE_SEARCH, MIN_RATING, -1, -1, TIME FROM QUICK_SEARCH;");
+                        "_id, NAME, MODE, CATEGORY, KEYWORD, ADVANCE_SEARCH, MIN_RATING, PAGE_FROM, PAGE_TO, TIME)" +
+                        "SELECT _id, NAME, MODE, CATEGORY, KEYWORD, ADVANCE_SEARCH, MIN_RATING, -1, -1, TIME FROM QUICK_SEARCH;");
                 db.execSQL("DROP TABLE QUICK_SEARCH");
                 db.execSQL("ALTER TABLE QUICK_SEARCH2 RENAME TO QUICK_SEARCH");
-        }
-    }
-
-    private static class OldDBHelper extends SQLiteOpenHelper {
-
-        private static final String DB_NAME = "data";
-        private static final int VERSION = 4;
-
-        private static final String TABLE_GALLERY = "gallery";
-        private static final String TABLE_LOCAL_FAVOURITE = "local_favourite";
-        private static final String TABLE_TAG = "tag";
-        private static final String TABLE_DOWNLOAD = "download";
-        private static final String TABLE_HISTORY = "history";
-
-        public OldDBHelper(Context context) {
-            super(context, DB_NAME, null, VERSION);
-        }
-
-        @Override
-        public void onCreate(SQLiteDatabase db) {
-        }
-
-        @Override
-        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         }
     }
 
@@ -259,7 +222,7 @@ public class EhDB {
                             search = search.substring("uploader:".length());
                         }
 
-                        quickSearch.setTime((long) cursor.getInt(0));
+                        quickSearch.setTime(cursor.getInt(0));
                         quickSearch.setName(cursor.getString(1));
                         quickSearch.setMode(mode);
                         quickSearch.setCategory(cursor.getInt(3));
@@ -362,7 +325,7 @@ public class EhDB {
         DownloadsDao dao = sDaoSession.getDownloadsDao();
         List<DownloadInfo> list = dao.queryBuilder().orderDesc(DownloadsDao.Properties.Time).list();
         // Fix state
-        for (DownloadInfo info: list) {
+        for (DownloadInfo info : list) {
             if (info.state == DownloadInfo.STATE_WAIT || info.state == DownloadInfo.STATE_DOWNLOAD) {
                 info.state = DownloadInfo.STATE_NONE;
             }
@@ -491,7 +454,7 @@ public class EhDB {
     }
 
     public static synchronized List<GalleryInfo> searchLocalFavorites(String query) {
-        query = SqlUtils.sqlEscapeString("%" + query+ "%");
+        query = SqlUtils.sqlEscapeString("%" + query + "%");
         LocalFavoritesDao dao = sDaoSession.getLocalFavoritesDao();
         List<LocalFavoriteInfo> list = dao.queryBuilder().orderDesc(LocalFavoritesDao.Properties.Time)
                 .where(LocalFavoritesDao.Properties.Title.like(query)).list();
@@ -506,7 +469,7 @@ public class EhDB {
 
     public static synchronized void removeLocalFavorites(long[] gidArray) {
         LocalFavoritesDao dao = sDaoSession.getLocalFavoritesDao();
-        for (long gid: gidArray) {
+        for (long gid : gidArray) {
             dao.deleteByKey(gid);
         }
     }
@@ -531,7 +494,7 @@ public class EhDB {
     }
 
     public static synchronized void putLocalFavorites(List<GalleryInfo> galleryInfoList) {
-        for (GalleryInfo gi: galleryInfoList) {
+        for (GalleryInfo gi : galleryInfoList) {
             putLocalFavorites(gi);
         }
     }
@@ -607,7 +570,7 @@ public class EhDB {
 
     public static synchronized void putHistoryInfo(List<HistoryInfo> historyInfoList) {
         HistoryDao dao = sDaoSession.getHistoryDao();
-        for (HistoryInfo info: historyInfoList) {
+        for (HistoryInfo info : historyInfoList) {
             if (null == dao.load(info.gid)) {
                 dao.insert(info);
             }
@@ -657,7 +620,7 @@ public class EhDB {
         return true;
     }
 
-    public static synchronized boolean exportDB(Context context, File file) {
+    public static synchronized boolean exportDB(Context context, Uri uri) {
         final String ehExportName = "eh.export.db";
 
         // Delete old export db
@@ -670,14 +633,22 @@ public class EhDB {
             try (SQLiteDatabase db = helper.getWritableDatabase()) {
                 DaoMaster daoMaster = new DaoMaster(db);
                 DaoSession exportSession = daoMaster.newSession();
-                if (!copyDao(sDaoSession.getDownloadsDao(), exportSession.getDownloadsDao())) return false;
-                if (!copyDao(sDaoSession.getDownloadLabelDao(), exportSession.getDownloadLabelDao())) return false;
-                if (!copyDao(sDaoSession.getDownloadDirnameDao(), exportSession.getDownloadDirnameDao())) return false;
-                if (!copyDao(sDaoSession.getHistoryDao(), exportSession.getHistoryDao())) return false;
-                if (!copyDao(sDaoSession.getQuickSearchDao(), exportSession.getQuickSearchDao())) return false;
-                if (!copyDao(sDaoSession.getLocalFavoritesDao(), exportSession.getLocalFavoritesDao())) return false;
-                if (!copyDao(sDaoSession.getBookmarksBao(), exportSession.getBookmarksBao())) return false;
-                if (!copyDao(sDaoSession.getFilterDao(), exportSession.getFilterDao())) return false;
+                if (!copyDao(sDaoSession.getDownloadsDao(), exportSession.getDownloadsDao()))
+                    return false;
+                if (!copyDao(sDaoSession.getDownloadLabelDao(), exportSession.getDownloadLabelDao()))
+                    return false;
+                if (!copyDao(sDaoSession.getDownloadDirnameDao(), exportSession.getDownloadDirnameDao()))
+                    return false;
+                if (!copyDao(sDaoSession.getHistoryDao(), exportSession.getHistoryDao()))
+                    return false;
+                if (!copyDao(sDaoSession.getQuickSearchDao(), exportSession.getQuickSearchDao()))
+                    return false;
+                if (!copyDao(sDaoSession.getLocalFavoritesDao(), exportSession.getLocalFavoritesDao()))
+                    return false;
+                if (!copyDao(sDaoSession.getBookmarksBao(), exportSession.getBookmarksBao()))
+                    return false;
+                if (!copyDao(sDaoSession.getFilterDao(), exportSession.getFilterDao()))
+                    return false;
             }
 
             // Copy export db to data dir
@@ -689,7 +660,7 @@ public class EhDB {
             OutputStream os = null;
             try {
                 is = new FileInputStream(dbFile);
-                os = new FileOutputStream(file);
+                os = context.getContentResolver().openOutputStream(uri);
                 IOUtils.copy(is, os);
                 return true;
             } catch (IOException e) {
@@ -699,7 +670,6 @@ public class EhDB {
                 IOUtils.closeQuietly(os);
             }
             // Delete failed file
-            file.delete();
             return false;
         } finally {
             context.deleteDatabase(ehExportName);
@@ -710,8 +680,23 @@ public class EhDB {
      * @param file The db file
      * @return error string, null for no error
      */
-    public static synchronized String importDB(Context context, File file) {
+    public static synchronized String importDB(Context context, Uri uri) {
         try {
+            InputStream inputStream = context.getContentResolver().openInputStream(uri);
+            File file = File.createTempFile("importDatabase", "");
+            FileOutputStream outputStream = new FileOutputStream(file);
+            byte[] buff = new byte[1024];
+            int read;
+            if (inputStream != null) {
+                while ((read = inputStream.read(buff, 0, buff.length)) > 0) {
+                    outputStream.write(buff, 0, read);
+                }
+            } else {
+                return context.getString(R.string.cant_read_the_file);
+            }
+            inputStream.close();
+            outputStream.close();
+
             SQLiteDatabase db = SQLiteDatabase.openDatabase(
                     file.getPath(), null, SQLiteDatabase.NO_LOCALIZED_COLLATORS);
             int newVersion = DaoMaster.SCHEMA_VERSION;
@@ -737,7 +722,7 @@ public class EhDB {
 
             // Download dirname
             List<DownloadDirname> downloadDirnameList = session.getDownloadDirnameDao().queryBuilder().list();
-            for (DownloadDirname dirname: downloadDirnameList) {
+            for (DownloadDirname dirname : downloadDirnameList) {
                 putDownloadDirname(dirname.getGid(), dirname.getDirname());
             }
 
@@ -748,9 +733,9 @@ public class EhDB {
             // QuickSearch
             List<QuickSearch> quickSearchList = session.getQuickSearchDao().queryBuilder().list();
             List<QuickSearch> currentQuickSearchList = sDaoSession.getQuickSearchDao().queryBuilder().list();
-            for (QuickSearch quickSearch: quickSearchList) {
+            for (QuickSearch quickSearch : quickSearchList) {
                 String name = quickSearch.name;
-                for (QuickSearch q: currentQuickSearchList) {
+                for (QuickSearch q : currentQuickSearchList) {
                     if (ObjectUtils.equal(q.name, name)) {
                         // The same name
                         name = null;
@@ -765,7 +750,7 @@ public class EhDB {
 
             // LocalFavorites
             List<LocalFavoriteInfo> localFavoriteInfoList = session.getLocalFavoritesDao().queryBuilder().list();
-            for (LocalFavoriteInfo info: localFavoriteInfoList) {
+            for (LocalFavoriteInfo info : localFavoriteInfoList) {
                 putLocalFavorites(info);
             }
 
@@ -775,7 +760,7 @@ public class EhDB {
             // Filter
             List<Filter> filterList = session.getFilterDao().queryBuilder().list();
             List<Filter> currentFilterList = sDaoSession.getFilterDao().queryBuilder().list();
-            for (Filter filter: filterList) {
+            for (Filter filter : filterList) {
                 if (!currentFilterList.contains(filter)) {
                     addFilter(filter);
                 }
@@ -786,6 +771,48 @@ public class EhDB {
             ExceptionUtils.throwIfFatal(e);
             // Ignore
             return context.getString(R.string.cant_read_the_file);
+        }
+    }
+
+    private static class DBOpenHelper extends DaoMaster.OpenHelper {
+
+        public DBOpenHelper(Context context, String name, SQLiteDatabase.CursorFactory factory) {
+            super(context, name, factory);
+        }
+
+        @Override
+        public void onCreate(SQLiteDatabase db) {
+            super.onCreate(db);
+            sNewDB = true;
+        }
+
+        @Override
+        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+            upgradeDB(db, oldVersion);
+        }
+    }
+
+    private static class OldDBHelper extends SQLiteOpenHelper {
+
+        private static final String DB_NAME = "data";
+        private static final int VERSION = 4;
+
+        private static final String TABLE_GALLERY = "gallery";
+        private static final String TABLE_LOCAL_FAVOURITE = "local_favourite";
+        private static final String TABLE_TAG = "tag";
+        private static final String TABLE_DOWNLOAD = "download";
+        private static final String TABLE_HISTORY = "history";
+
+        public OldDBHelper(Context context) {
+            super(context, DB_NAME, null, VERSION);
+        }
+
+        @Override
+        public void onCreate(SQLiteDatabase db) {
+        }
+
+        @Override
+        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         }
     }
 }

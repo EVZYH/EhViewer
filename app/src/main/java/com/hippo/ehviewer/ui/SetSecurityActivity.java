@@ -16,15 +16,15 @@
 
 package com.hippo.ehviewer.ui;
 
-import android.hardware.fingerprint.FingerprintManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.CheckBox;
+
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+import androidx.biometric.BiometricManager;
+
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
 import com.hippo.widget.lockpattern.LockPatternUtils;
@@ -59,28 +59,13 @@ public class SetSecurityActivity extends ToolbarActivity implements View.OnClick
                     LockPatternUtils.stringToPattern(pattern));
         }
 
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-            FingerprintManager fingerprintManager = getSystemService(FingerprintManager.class);
-            // The line below prevents the false positive inspection from Android Studio
-            // noinspection ResourceType
-            if (fingerprintManager != null && hasEnrolledFingerprints(fingerprintManager)) {
-                mFingerprint.setVisibility(View.VISIBLE);
-                mFingerprint.setChecked(Settings.getEnableFingerprint());
-            }
+        if (BiometricManager.from(this).canAuthenticate() == BiometricManager.BIOMETRIC_SUCCESS) {
+            mFingerprint.setVisibility(View.VISIBLE);
+            mFingerprint.setChecked(Settings.getEnableFingerprint());
         }
 
         mCancel.setOnClickListener(this);
         mSet.setOnClickListener(this);
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.M)
-    public static boolean hasEnrolledFingerprints(FingerprintManager fingerprintManager) {
-        try {
-            return fingerprintManager.isHardwareDetected()
-                && fingerprintManager.hasEnrolledFingerprints();
-        } catch (Throwable e) {
-            return false;
-        }
     }
 
     @Override

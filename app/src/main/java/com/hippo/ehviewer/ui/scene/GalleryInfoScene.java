@@ -20,17 +20,17 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.res.Resources;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.hippo.android.resource.AttrResources;
 import com.hippo.easyrecyclerview.EasyRecyclerView;
 import com.hippo.easyrecyclerview.LinearDividerItemDecoration;
@@ -40,13 +40,13 @@ import com.hippo.ehviewer.UrlOpener;
 import com.hippo.ehviewer.client.EhUrl;
 import com.hippo.ehviewer.client.EhUtils;
 import com.hippo.ehviewer.client.data.GalleryDetail;
-import com.hippo.ripple.Ripple;
 import com.hippo.yorozuya.AssertUtils;
 import com.hippo.yorozuya.LayoutUtils;
 import com.hippo.yorozuya.ViewUtils;
+
 import java.util.ArrayList;
 
-public final class GalleryInfoScene extends ToolbarScene implements EasyRecyclerView.OnItemClickListener {
+public final class GalleryInfoScene extends ToolbarScene {
 
     public static final String KEY_GALLERY_DETAIL = "gallery_detail";
     public static final String KEY_KEYS = "keys";
@@ -155,11 +155,9 @@ public final class GalleryInfoScene extends ToolbarScene implements EasyRecycler
         outState.putStringArrayList(KEY_VALUES, mValues);
     }
 
-    @SuppressWarnings("deprecation")
-    @Nullable
     @Override
     public View onCreateView3(LayoutInflater inflater,
-            @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+                              @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.scene_gallery_info, container, false);
 
         Context context = getContext2();
@@ -175,10 +173,10 @@ public final class GalleryInfoScene extends ToolbarScene implements EasyRecycler
                 LayoutUtils.dp2pix(context, 1));
         decoration.setPadding(context.getResources().getDimensionPixelOffset(R.dimen.keyline_margin));
         mRecyclerView.addItemDecoration(decoration);
-        mRecyclerView.setSelector(Ripple.generateRippleDrawable(context, !AttrResources.getAttrBoolean(context, R.attr.isLightTheme), new ColorDrawable(Color.TRANSPARENT)));
+        //mRecyclerView.setSelector(Ripple.generateRippleDrawable(context, !AttrResources.getAttrBoolean(context, R.attr.isLightTheme), new ColorDrawable(Color.TRANSPARENT)));
         mRecyclerView.setClipToPadding(false);
         mRecyclerView.setHasFixedSize(true);
-        mRecyclerView.setOnItemClickListener(this);
+        //mRecyclerView.setOnItemClickListener(this);
         return view;
     }
 
@@ -199,8 +197,7 @@ public final class GalleryInfoScene extends ToolbarScene implements EasyRecycler
         }
     }
 
-    @Override
-    public boolean onItemClick(EasyRecyclerView parent, View view, int position, long id) {
+    public boolean onItemClick(int position) {
         Context context = getContext2();
         if (null != context && 0 != position && null != mValues) {
             if (position == INDEX_PARENT) {
@@ -235,8 +232,8 @@ public final class GalleryInfoScene extends ToolbarScene implements EasyRecycler
         public InfoHolder(View itemView) {
             super(itemView);
 
-            key = (TextView) itemView.findViewById(R.id.key);
-            value = (TextView) itemView.findViewById(R.id.value);
+            key = itemView.findViewById(R.id.key);
+            value = itemView.findViewById(R.id.value);
         }
     }
 
@@ -273,6 +270,7 @@ public final class GalleryInfoScene extends ToolbarScene implements EasyRecycler
                 holder.key.setText(mKeys.get(position));
                 holder.value.setText(mValues.get(position));
                 holder.itemView.setEnabled(position != 0);
+                holder.itemView.setOnClickListener(v -> onItemClick(position));
             }
         }
 

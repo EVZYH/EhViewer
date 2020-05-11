@@ -20,15 +20,17 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.ListView;
+
 import androidx.appcompat.app.AlertDialog;
+
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.hippo.ehviewer.R;
 import com.hippo.yorozuya.ViewUtils;
 
-public class ListCheckBoxDialogBuilder extends AlertDialog.Builder {
+public class ListCheckBoxDialogBuilder extends MaterialAlertDialogBuilder {
 
     private final CheckBox mCheckBox;
 
@@ -36,21 +38,18 @@ public class ListCheckBoxDialogBuilder extends AlertDialog.Builder {
 
     @SuppressLint("InflateParams")
     public ListCheckBoxDialogBuilder(Context context, CharSequence[] items,
-            final OnItemClickListener listener, String checkText, boolean checked) {
+                                     final OnItemClickListener listener, String checkText, boolean checked) {
         super(context);
         View view = LayoutInflater.from(getContext()).inflate(R.layout.dialog_list_checkbox_builder, null);
         setView(view);
         ListView listView = (ListView) ViewUtils.$$(view, R.id.list_view);
         mCheckBox = (CheckBox) ViewUtils.$$(view, R.id.checkbox);
         listView.setAdapter(new ArrayAdapter<>(getContext(), R.layout.item_select_dialog, items));
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                if (listener != null) {
-                    listener.onItemClick(ListCheckBoxDialogBuilder.this, mDialog, position);
-                }
-                mDialog.dismiss();
+        listView.setOnItemClickListener((parent, view1, position, id) -> {
+            if (listener != null) {
+                listener.onItemClick(ListCheckBoxDialogBuilder.this, mDialog, position);
             }
+            mDialog.dismiss();
         });
         mCheckBox.setText(checkText);
         mCheckBox.setChecked(checked);

@@ -25,11 +25,14 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+
 import androidx.appcompat.app.AlertDialog;
+
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputLayout;
 import com.hippo.ehviewer.R;
 
-public class EditTextDialogBuilder extends AlertDialog.Builder implements EditText.OnEditorActionListener {
+public class EditTextDialogBuilder extends MaterialAlertDialogBuilder implements EditText.OnEditorActionListener {
 
     private final TextInputLayout mTextInputLayout;
     private final EditText mEditText;
@@ -41,7 +44,7 @@ public class EditTextDialogBuilder extends AlertDialog.Builder implements EditTe
         View view = LayoutInflater.from(getContext()).inflate(R.layout.dialog_edittext_builder, null);
         setView(view);
         mTextInputLayout = (TextInputLayout) view;
-        mEditText = (EditText) view.findViewById(R.id.edit_text);
+        mEditText = view.findViewById(R.id.edit_text);
         mEditText.setText(text);
         mEditText.setSelection(mEditText.getText().length());
         mEditText.setOnEditorActionListener(this);

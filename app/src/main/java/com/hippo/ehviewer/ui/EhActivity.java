@@ -17,41 +17,81 @@
 package com.hippo.ehviewer.ui;
 
 import android.content.Context;
-import android.os.Build;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.view.WindowManager;
+
 import androidx.annotation.Nullable;
 import androidx.annotation.StyleRes;
 import androidx.appcompat.app.AppCompatActivity;
-import com.google.firebase.analytics.FirebaseAnalytics;
-import com.hippo.android.resource.AttrResources;
+
 import com.hippo.content.ContextLocalWrapper;
-import com.hippo.ehviewer.Analytics;
 import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
+
 import java.util.Locale;
+import java.util.Objects;
 
 public abstract class EhActivity extends AppCompatActivity {
 
+    private static final String THEME_DEFAULT = "DEFAULT";
+    private static final String THEME_BLACK = "BLACK";
+    private String mTheme;
+
+    public static boolean isBlackNightTheme() {
+        return Settings.getBoolean("black_dark_theme", false);
+    }
+
+    public static String getTheme(Context context) {
+        if (isBlackNightTheme()
+                && isNightMode(context.getResources().getConfiguration()))
+            return THEME_BLACK;
+
+        return THEME_DEFAULT;
+    }
+
+    public static boolean isNightMode(Configuration configuration) {
+        return (configuration.uiMode & Configuration.UI_MODE_NIGHT_YES) > 0;
+    }
+
+    @Override
+    protected void onApplyThemeResource(Resources.Theme theme, int resid, boolean first) {
+        // apply real style and our custom style
+        if (getParent() == null) {
+            theme.applyStyle(resid, true);
+        } else {
+            try {
+                theme.setTo(getParent().getTheme());
+            } catch (Exception e) {
+                // Empty
+            }
+            theme.applyStyle(resid, false);
+        }
+        theme.applyStyle(getThemeStyleRes(this), true);
+        // only pass theme style to super, so styled theme will not be overwritten
+        super.onApplyThemeResource(theme, R.style.ThemeOverlay, first);
+    }
+
     @StyleRes
-    protected abstract int getThemeResId(int theme);
+    public int getThemeStyleRes(Context context) {
+        switch (getTheme(context)) {
+            case THEME_BLACK:
+                return R.style.ThemeOverlay_Black;
+            case THEME_DEFAULT:
+            default:
+                return R.style.ThemeOverlay;
+        }
+    }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
-        setTheme(getThemeResId(Settings.getTheme()));
-
         super.onCreate(savedInstanceState);
 
         ((EhApplication) getApplication()).registerActivity(this);
 
-        if (Analytics.isEnabled()) {
-            FirebaseAnalytics.getInstance(this);
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && Settings.getApplyNavBarThemeColor()) {
-            getWindow().setNavigationBarColor(AttrResources.getAttrColor(this, R.attr.colorPrimaryDark));
-        }
+        mTheme = getTheme(this);
     }
 
     @Override
@@ -64,11 +104,14 @@ public abstract class EhActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if(Settings.getEnabledSecurity()){
+        if (Settings.getEnabledSecurity()) {
             getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE,
                     WindowManager.LayoutParams.FLAG_SECURE);
-        }else{
+        } else {
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
+        }
+        if (!Objects.equals(mTheme, getTheme(this))) {
+            recreate();
         }
     }
 

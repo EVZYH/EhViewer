@@ -16,13 +16,15 @@
 
 package com.hippo.ehviewer.preference;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Parcel;
-import android.preference.Preference;
 import android.util.AttributeSet;
-import android.widget.Toast;
+
 import androidx.annotation.NonNull;
+import androidx.preference.Preference;
+
 import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.EhDB;
 import com.hippo.ehviewer.R;
@@ -33,14 +35,18 @@ import com.hippo.ehviewer.client.data.GalleryInfo;
 import com.hippo.ehviewer.download.DownloadManager;
 import com.hippo.ehviewer.spider.SpiderInfo;
 import com.hippo.ehviewer.spider.SpiderQueen;
+import com.hippo.ehviewer.ui.SettingsActivity;
+import com.hippo.ehviewer.ui.scene.BaseScene;
 import com.hippo.unifile.UniFile;
 import com.hippo.util.ExceptionUtils;
 import com.hippo.yorozuya.IOUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 import okhttp3.OkHttpClient;
 
 public class RestoreDownloadPreference extends TaskPreference {
@@ -65,15 +71,16 @@ public class RestoreDownloadPreference extends TaskPreference {
 
     private static class RestoreTask extends Task {
 
-        private final EhApplication mApplication;
+        @SuppressLint("StaticFieldLeak")
+        private final SettingsActivity mActivity;
         private final DownloadManager mManager;
         private final OkHttpClient mHttpClient;
 
         public RestoreTask(@NonNull Context context) {
             super(context);
-            mApplication = (EhApplication) context.getApplicationContext();
-            mManager = EhApplication.getDownloadManager(mApplication);
-            mHttpClient = EhApplication.getOkHttpClient(mApplication);
+            mActivity = (SettingsActivity) context;
+            mManager = EhApplication.getDownloadManager(context.getApplicationContext());
+            mHttpClient = EhApplication.getOkHttpClient(context.getApplicationContext());
         }
 
         private RestoreItem getRestoreItem(UniFile file) {
@@ -123,7 +130,7 @@ public class RestoreDownloadPreference extends TaskPreference {
                 return null;
             }
 
-            for (UniFile file: files) {
+            for (UniFile file : files) {
                 RestoreItem restoreItem = getRestoreItem(file);
                 if (null != restoreItem) {
                     restoreItemList.add(restoreItem);
@@ -147,11 +154,11 @@ public class RestoreDownloadPreference extends TaskPreference {
         @SuppressWarnings("unchecked")
         protected void onPostExecute(Object o) {
             if (!(o instanceof List)) {
-                Toast.makeText(mApplication, R.string.settings_download_restore_failed, Toast.LENGTH_SHORT).show();
+                mActivity.showTip(R.string.settings_download_restore_failed, BaseScene.LENGTH_SHORT);
             } else {
                 List<RestoreItem> list = (List<RestoreItem>) o;
                 if (list.isEmpty()) {
-                    Toast.makeText(mApplication, R.string.settings_download_restore_not_found, Toast.LENGTH_SHORT).show();
+                    mActivity.showTip(R.string.settings_download_restore_not_found, BaseScene.LENGTH_SHORT);
                 } else {
                     int count = 0;
                     for (int i = 0, n = list.size(); i < n; i++) {
@@ -165,9 +172,9 @@ public class RestoreDownloadPreference extends TaskPreference {
                             count++;
                         }
                     }
-                    Toast.makeText(mApplication,
-                            mApplication.getString(R.string.settings_download_restore_successfully, count),
-                            Toast.LENGTH_SHORT).show();
+                    mActivity.showTip(
+                            mActivity.getString(R.string.settings_download_restore_successfully, count),
+                            BaseScene.LENGTH_SHORT);
 
                     Preference preference = getPreference();
                     if (null != preference) {
@@ -184,27 +191,6 @@ public class RestoreDownloadPreference extends TaskPreference {
 
     private static class RestoreItem extends GalleryInfo {
 
-        public String dirname;
-
-        @Override
-        public int describeContents() {
-            return 0;
-        }
-
-        @Override
-        public void writeToParcel(Parcel dest, int flags) {
-            super.writeToParcel(dest, flags);
-            dest.writeString(this.dirname);
-        }
-
-        public RestoreItem() {
-        }
-
-        protected RestoreItem(Parcel in) {
-            super(in);
-            this.dirname = in.readString();
-        }
-
         public static final Creator<RestoreItem> CREATOR = new Creator<RestoreItem>() {
             @Override
             public RestoreItem createFromParcel(Parcel source) {
@@ -216,5 +202,25 @@ public class RestoreDownloadPreference extends TaskPreference {
                 return new RestoreItem[size];
             }
         };
+        public String dirname;
+
+        public RestoreItem() {
+        }
+
+        protected RestoreItem(Parcel in) {
+            super(in);
+            this.dirname = in.readString();
+        }
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            super.writeToParcel(dest, flags);
+            dest.writeString(this.dirname);
+        }
     }
 }

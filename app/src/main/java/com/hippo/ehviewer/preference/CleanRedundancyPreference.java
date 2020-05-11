@@ -16,14 +16,18 @@
 
 package com.hippo.ehviewer.preference;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.util.AttributeSet;
-import android.widget.Toast;
+
 import androidx.annotation.NonNull;
+
 import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
 import com.hippo.ehviewer.download.DownloadManager;
+import com.hippo.ehviewer.ui.SettingsActivity;
+import com.hippo.ehviewer.ui.scene.BaseScene;
 import com.hippo.unifile.UniFile;
 import com.hippo.yorozuya.NumberUtils;
 
@@ -49,13 +53,14 @@ public class CleanRedundancyPreference extends TaskPreference {
 
     private static class ClearTask extends Task {
 
-        private final EhApplication mApplication;
+        @SuppressLint("StaticFieldLeak")
+        private final SettingsActivity mActivity;
         private final DownloadManager mManager;
 
         public ClearTask(@NonNull Context context) {
             super(context);
-            mApplication = (EhApplication) context.getApplicationContext();
-            mManager = EhApplication.getDownloadManager(mApplication);
+            mActivity = (SettingsActivity) context;
+            mManager = EhApplication.getDownloadManager(context.getApplicationContext());
         }
 
         // True for cleared
@@ -91,7 +96,7 @@ public class CleanRedundancyPreference extends TaskPreference {
             }
 
             int count = 0;
-            for (UniFile f: files) {
+            for (UniFile f : files) {
                 if (clearFile(f)) {
                     ++count;
                 }
@@ -109,9 +114,9 @@ public class CleanRedundancyPreference extends TaskPreference {
                 count = 0;
             }
 
-            Toast.makeText(mApplication, 0 == count ?
-                    mApplication.getString(R.string.settings_download_clean_redundancy_no_redundancy):
-                    mApplication.getString(R.string.settings_download_clean_redundancy_done, count), Toast.LENGTH_SHORT).show();
+            mActivity.showTip(0 == count ?
+                    mActivity.getString(R.string.settings_download_clean_redundancy_no_redundancy) :
+                    mActivity.getString(R.string.settings_download_clean_redundancy_done, count), BaseScene.LENGTH_SHORT);
             super.onPostExecute(o);
         }
     }

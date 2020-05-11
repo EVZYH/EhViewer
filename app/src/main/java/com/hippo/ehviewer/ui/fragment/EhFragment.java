@@ -17,25 +17,28 @@
 package com.hippo.ehviewer.ui.fragment;
 
 import android.app.Activity;
-import android.os.Build;
+import android.content.res.Configuration;
 import android.os.Bundle;
-import android.preference.Preference;
-import android.preference.PreferenceFragment;
+
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.preference.Preference;
+
 import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.Settings;
 import com.hippo.ehviewer.client.EhTagDatabase;
+import com.takisoft.preferencex.PreferenceFragmentCompat;
 
-public class EhFragment extends PreferenceFragment
+public class EhFragment extends PreferenceFragmentCompat
         implements Preference.OnPreferenceChangeListener {
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    public void onCreatePreferencesFix(@Nullable Bundle savedInstanceState, String rootKey) {
         addPreferencesFromResource(R.xml.eh_settings);
 
         Preference theme = findPreference(Settings.KEY_THEME);
-        Preference applyNavBarThemeColor = findPreference(Settings.KEY_APPLY_NAV_BAR_THEME_COLOR);
+        Preference blackDarkTheme = findPreference(Settings.KEY_BLACK_DARK_THEME);
         Preference gallerySite = findPreference(Settings.KEY_GALLERY_SITE);
         Preference listMode = findPreference(Settings.KEY_LIST_MODE);
         Preference detailSize = findPreference(Settings.KEY_DETAIL_SIZE);
@@ -44,18 +47,14 @@ public class EhFragment extends PreferenceFragment
         Preference tagTranslationsSource = findPreference("tag_translations_source");
 
         theme.setOnPreferenceChangeListener(this);
-        applyNavBarThemeColor.setOnPreferenceChangeListener(this);
         gallerySite.setOnPreferenceChangeListener(this);
         listMode.setOnPreferenceChangeListener(this);
         detailSize.setOnPreferenceChangeListener(this);
         thumbSize.setOnPreferenceChangeListener(this);
         showTagTranslations.setOnPreferenceChangeListener(this);
+        blackDarkTheme.setOnPreferenceChangeListener(this);
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            getPreferenceScreen().removePreference(applyNavBarThemeColor);
-        }
-
-        if (!EhTagDatabase.isPossible(getActivity())) {
+        if (!EhTagDatabase.isPossible(requireActivity())) {
             getPreferenceScreen().removePreference(showTagTranslations);
             getPreferenceScreen().removePreference(tagTranslationsSource);
         }
@@ -65,25 +64,28 @@ public class EhFragment extends PreferenceFragment
     public boolean onPreferenceChange(Preference preference, Object newValue) {
         String key = preference.getKey();
         if (Settings.KEY_THEME.equals(key)) {
-            ((EhApplication) getActivity().getApplication()).recreate();
-            return true;
-        } else if (Settings.KEY_APPLY_NAV_BAR_THEME_COLOR.equals(key)) {
-            ((EhApplication) getActivity().getApplication()).recreate();
+            AppCompatDelegate.setDefaultNightMode(Integer.parseInt((String) newValue));
+            ((EhApplication) requireActivity().getApplication()).recreate();
             return true;
         } else if (Settings.KEY_GALLERY_SITE.equals(key)) {
-            getActivity().setResult(Activity.RESULT_OK);
+            requireActivity().setResult(Activity.RESULT_OK);
             return true;
         } else if (Settings.KEY_LIST_MODE.equals(key)) {
-            getActivity().setResult(Activity.RESULT_OK);
+            requireActivity().setResult(Activity.RESULT_OK);
             return true;
         } else if (Settings.KEY_DETAIL_SIZE.equals(key)) {
-            getActivity().setResult(Activity.RESULT_OK);
+            requireActivity().setResult(Activity.RESULT_OK);
         } else if (Settings.KEY_THUMB_SIZE.equals(key)) {
-            getActivity().setResult(Activity.RESULT_OK);
+            requireActivity().setResult(Activity.RESULT_OK);
         } else if (Settings.KEY_SHOW_TAG_TRANSLATIONS.equals(key)) {
             if (Boolean.TRUE.equals(newValue)) {
-                EhTagDatabase.update(getActivity());
+                EhTagDatabase.update(requireActivity());
             }
+        } else if (Settings.KEY_BLACK_DARK_THEME.equals(key)) {
+            if ((requireActivity().getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_YES) > 0) {
+                ((EhApplication) requireActivity().getApplication()).recreate();
+            }
+            return true;
         }
         return true;
     }

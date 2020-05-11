@@ -17,7 +17,10 @@
 package com.hippo.ehviewer.ui.scene;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.SparseArray;
@@ -26,14 +29,17 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+
 import androidx.annotation.IdRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.annotation.StyleRes;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.FragmentActivity;
-import com.hippo.drawerlayout.DrawerLayout;
-import com.hippo.ehviewer.Analytics;
+
+import com.hippo.android.resource.AttrResources;
+import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.ui.MainActivity;
 import com.hippo.scene.SceneFragment;
 import com.hippo.util.AppHelper;
@@ -44,7 +50,7 @@ public abstract class BaseScene extends SceneFragment {
     public static final int LENGTH_LONG = 1;
 
     public static final String KEY_DRAWER_VIEW_STATE =
-        "com.hippo.ehviewer.ui.scene.BaseScene:DRAWER_VIEW_STATE";
+            "com.hippo.ehviewer.ui.scene.BaseScene:DRAWER_VIEW_STATE";
 
     private Context mThemeContext;
 
@@ -111,29 +117,12 @@ public abstract class BaseScene extends SceneFragment {
         }
     }
 
-    public void setDrawerGestureBlocker(DrawerLayout.GestureBlocker gestureBlocker) {
-        FragmentActivity activity = getActivity();
-        if (activity instanceof MainActivity) {
-            ((MainActivity) activity).setDrawerGestureBlocker(gestureBlocker);
-        }
-    }
-
     public boolean isDrawersVisible() {
         FragmentActivity activity = getActivity();
         if (activity instanceof MainActivity) {
             return ((MainActivity) activity).isDrawersVisible();
         } else {
             return false;
-        }
-    }
-
-    /**
-     * @param resId 0 for clear
-     */
-    public void setNavCheckedItem(@IdRes int resId) {
-        FragmentActivity activity = getActivity();
-        if (activity instanceof MainActivity) {
-            ((MainActivity) activity).setNavCheckedItem(resId);
         }
     }
 
@@ -159,8 +148,18 @@ public abstract class BaseScene extends SceneFragment {
         return 0;
     }
 
+    /**
+     * @param resId 0 for clear
+     */
+    public void setNavCheckedItem(@IdRes int resId) {
+        FragmentActivity activity = getActivity();
+        if (activity instanceof MainActivity) {
+            ((MainActivity) activity).setNavCheckedItem(resId);
+        }
+    }
+
     public final View createDrawerView(LayoutInflater inflater,
-        @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+                                       @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         drawerView = onCreateDrawerView(inflater, container, savedInstanceState);
 
         if (drawerView != null) {
@@ -177,7 +176,7 @@ public abstract class BaseScene extends SceneFragment {
     }
 
     public View onCreateDrawerView(LayoutInflater inflater,
-            @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+                                   @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         return null;
     }
 
@@ -192,19 +191,35 @@ public abstract class BaseScene extends SceneFragment {
         drawerView = null;
     }
 
+    public void setWhiteStatusBar(boolean set) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            View decorView = requireActivity().getWindow().getDecorView();
+            int flags = decorView.getSystemUiVisibility();
+            if (set && (requireActivity().getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_YES) <= 0) {
+                flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            } else {
+                flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            }
+            decorView.setSystemUiVisibility(flags);
+            ((DrawerLayout) requireActivity().findViewById(R.id.draw_view)).setStatusBarBackgroundColor(set ? Color.TRANSPARENT : AttrResources.getAttrColor(requireContext(), R.attr.colorPrimaryDark));
+        } else {
+            ((DrawerLayout) requireActivity().findViewById(R.id.draw_view)).setStatusBarBackgroundColor(AttrResources.getAttrColor(requireContext(), R.attr.colorPrimaryDark));
+        }
+    }
+
     public void onDestroyDrawerView() {
     }
 
     @Nullable
     @Override
     public final View onCreateView(LayoutInflater inflater,
-            @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+                                   @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         return onCreateView2(LayoutInflater.from(getContext2()), container, savedInstanceState);
     }
 
     @Nullable
     public View onCreateView2(LayoutInflater inflater,
-            @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+                              @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         return null;
     }
 
@@ -224,6 +239,7 @@ public abstract class BaseScene extends SceneFragment {
 
         // Hide soft ime
         AppHelper.hideSoftInput(getActivity());
+        setWhiteStatusBar(true);
     }
 
     public void createThemeContext(@StyleRes int style) {
@@ -276,12 +292,6 @@ public abstract class BaseScene extends SceneFragment {
         if (null != activity && null != view) {
             AppHelper.showSoftInput(activity, view);
         }
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        Analytics.onSceneView(this);
     }
 
     @Override
