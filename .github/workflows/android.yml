@@ -26,8 +26,7 @@ jobs:
         run: |
           ./gradlew assemble
       - name: Upload firmware
-      - uses: actions/upload-artifact@master
-        name: Upload artifact
+        uses: actions/upload-artifact@master
         with:
           name: EhViewer
           path: app/build/outputs/
