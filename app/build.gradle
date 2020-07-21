@@ -8,7 +8,6 @@ android {
         applicationId "com.hippo.ehviewer"
         minSdkVersion 21
         targetSdkVersion 30
-        buildToolsVersion "30.0.1"
         versionCode 106
         versionName "1.7.5"
         resConfigs "zh", "zh-rCN", "zh-rHK", "zh-rTW",

@@ -24,8 +24,6 @@ jobs:
             ${{ runner.os }}-gradle-
       - name: Build
         run: |
-          mkdir /home/runner/.android
-          echo -e "### User Sources for Android SDK Manager\ncount=0" > /home/runner/.android/repositories.cfg
           ./gradlew assemble
       - name: Upload apk
         uses: actions/upload-artifact@master
