@@ -705,5 +705,6 @@
     <string name="settings_privacy_secure">不允許螢幕擷取</string>
     <string name="settings_privacy_secure_summary">啟用後，將無法對本程式進行螢幕擷取，同時，將不會在系統任務切換器中顯示該程式的預覽內容\n\n重新啟動本程式以套用此變更</string>
     <string name="favorite_name">收藏圖庫</string>
-
+	<string name="settings_download_download_delay">下载延时</string>
+	<string name="settings_download_download_delay_summary">每次下载延时 %s 毫秒</string>
 </resources>
