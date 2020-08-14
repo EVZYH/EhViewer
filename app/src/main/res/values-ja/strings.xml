@@ -356,7 +356,7 @@
     <string name="set_pattern_protection">パターン保護を設定</string>
     <string name="set_pattern_protection_tip">パターンを描いてパターン保護を設定します\n空白のまま続行してパターン保護をクリアします</string>
     <string name="set">設定</string>
-    <string name="enable_fingerprint">指紋でロックを解除</string>
+    <string name="enable_biometric">生体認証でロックを解除</string>
 
     <!-- UConfig Activity -->
     <string name="u_config">EHentaiの設定</string>
