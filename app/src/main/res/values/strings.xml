@@ -25,6 +25,7 @@
     <string name="theme_light">Light Theme</string>
     <string name="theme_dark">Dark Theme</string>
     <string name="theme_black">Black Theme</string>
+    <string name="newer_version_avaliable">There are newer versions of this gallery available.</string>
 
     <!-- Category -->
     <string name="doujinshi" translatable="false">DOUJINSHI</string>
@@ -397,6 +398,7 @@
     <string name="rename_label_title">Rename label</string>
     <string name="delete_label_title">Delete label</string>
     <string name="delete_label_message">Delete \"%s\"?</string>
+    <string name="rename_label">Rename</string>
 
     <!-- History -->
     <string name="no_history">Viewed galleries will be shown here</string>
@@ -782,4 +784,6 @@
     <string name="download_filter">Filter</string>
     <string name="download_all">All</string>
     <string name="download_start_all_reversed">Start all (reversed)</string>
+
+    <string name="no_browser_installed">Just install a browser please.</string>
 </resources>

@@ -237,6 +237,7 @@
     <string name="filter_the_uploader">遮蔽上傳者“%s”？</string>
     <string name="filter_the_tag">遮蔽標籤“%s”？</string>
     <string name="filter_added">已新增遮蔽項</string>
+    <string name="newer_version_avaliable">此画廊存在一个较新的版本</string>
 
     <!-- Rating -->
     <string name="rating10">根本把持不住</string>
@@ -351,6 +352,7 @@
     <string name="rename_label_title">重命名標籤</string>
     <string name="delete_label_title">刪除標籤</string>
     <string name="delete_label_message">刪除“%s”？</string>
+    <string name="rename_label">重命名</string>
 
     <!-- History -->
     <string name="no_history">這裏是閲讀歷史</string>
@@ -708,4 +710,6 @@
     <string name="favorite_name">收藏畫廊</string>
     <string name="settings_download_download_delay">下载延时</string>
     <string name="settings_download_download_delay_summary">每次下载延时 %s 毫秒</string>
+
+    <string name="no_browser_installed">请安装一个浏览器</string>
 </resources>

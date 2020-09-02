@@ -225,6 +225,7 @@
     <string name="filter_the_uploader">アップローダ「%s」をブロックしますか？</string>
     <string name="filter_the_tag">タグ「%s」をブロックしますか？</string>
     <string name="filter_added">ブロックアイテムを追加しました。</string>
+    <string name="newer_version_avaliable">此画廊存在一个较新的版本</string>
 
     <!-- Rating -->
     <string name="rating10">良すぎてたまらない</string>
@@ -333,6 +334,7 @@
     <string name="rename_label_title">ラベルの名前を変更</string>
     <string name="delete_label_title">ラベルを削除</string>
     <string name="delete_label_message">「%s」を削除しますか？</string>
+    <string name="rename_label">重命名</string>
 
     <!-- History -->
     <string name="no_history">閲覧履歴はここに表示されます</string>
@@ -690,4 +692,6 @@
     <string name="settings_eh_identity_cookies_copy">コピー</string>
     <string name="settings_eh_show_gallery_pages">ギャラリーページ数を表示</string>
     <string name="settings_eh_show_gallery_pages_summary">リストにギャラリーのページの数量を表示します</string>
+
+    <string name="no_browser_installed">请安装一个浏览器</string>
 </resources>
