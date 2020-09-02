@@ -672,7 +672,7 @@ public final class GalleryListScene extends BaseScene
     }
 
     private void showQuickSearchTipDialog(final QsDrawerAdapter adapter,
-                                          final EasyRecyclerView recyclerView, final ListView listView, final TextView tip) {
+                                          final EasyRecyclerView recyclerView, final TextView tip) {
         Context context = getContext2();
         if (null == context) {
             return;
