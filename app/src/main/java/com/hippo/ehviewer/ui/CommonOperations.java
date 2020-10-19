@@ -41,7 +41,22 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
 public final class CommonOperations {
+
+    private static final String TAG = CommonOperations.class.getSimpleName();
+
+    private static boolean UPDATING;
+
+    public static void checkUpdate(Activity activity, boolean feedback) {
+        /*if (!UPDATING) {
+            UPDATING = true;
+            new UpdateTask(activity, feedback).executeOnExecutor(IoThreadPoolExecutor.getInstance());
+        }*/
+    }
 
     private static void doAddToFavorites(Activity activity, GalleryInfo galleryInfo,
                                          int slot, EhClient.Callback<Void> listener) {
