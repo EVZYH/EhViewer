@@ -738,7 +738,7 @@ public final class GalleryListScene extends BaseScene
             quickSearch.name = text;
             EhDB.insertQuickSearch(quickSearch);
             mQuickSearchList.add(quickSearch);
-            adapter.notifyDataSetChanged();
+            adapter.notifyItemInserted(mQuickSearchList.size() - 1);
 
             if (0 == mQuickSearchList.size()) {
                 tip.setVisibility(View.VISIBLE);
@@ -936,12 +936,15 @@ public final class GalleryListScene extends BaseScene
         }
 
         switch (position) {
-            case 0: // Go to
+            case 0: // Open right
+                openDrawer(Gravity.RIGHT);
+                break;
+            case 1: // Go to
                 if (mHelper.canGoTo()) {
                     showGoToDialog();
                 }
                 break;
-            case 1: // Refresh
+            case 2: // Refresh
                 mHelper.refresh();
                 break;
         }
@@ -1532,8 +1535,8 @@ public final class GalleryListScene extends BaseScene
                     setState(STATE_NORMAL);
                     closeDrawer(Gravity.RIGHT);
                 });
-                holder.option.setOnClickListener(v -> {
-                    PopupMenu popupMenu = new PopupMenu(getContext2(), holder.option);
+                holder.itemView.setOnLongClickListener(v -> {
+                    PopupMenu popupMenu = new PopupMenu(requireContext(), holder.option);
                     popupMenu.inflate(R.menu.quicksearch_option);
                     popupMenu.show();
                     popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
@@ -1542,16 +1545,23 @@ public final class GalleryListScene extends BaseScene
 
                         @Override
                         public boolean onMenuItemClick(MenuItem item) {
-                            switch (item.getItemId()) {
-                                case R.id.menu_qs_remove:
-                                    EhDB.deleteQuickSearch(quickSearch);
-                                    mQuickSearchList.remove(position);
-                                    notifyDataSetChanged();
-                                    break;
+                        if (item.getItemId() == R.id.menu_qs_remove) {
+                                new MaterialAlertDialogBuilder(requireContext())
+                                        .setTitle(getString(R.string.delete_quick_search_title))
+                                        .setMessage(getString(R.string.delete_quick_search_message, quickSearch.name))
+                                        .setPositiveButton(R.string.delete, (dialog, which) -> {
+                                            EhDB.deleteQuickSearch(quickSearch);
+                                            mQuickSearchList.remove(position);
+                                            notifyDataSetChanged();
+                                        })
+                                        .setNegativeButton(android.R.string.cancel, null)
+                                        .show();
+                                return true;
                             }
                             return false;
                         }
                     });
+                    return true;
                 });
             }
         }
@@ -1568,7 +1578,7 @@ public final class GalleryListScene extends BaseScene
 
         @Override
         public boolean onCheckCanStartDrag(@NonNull QsDrawerHolder holder, int position, int x, int y) {
-            return true;
+            return x > holder.option.getX() && y > holder.option.getY();
         }
 
         @Override
