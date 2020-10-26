@@ -694,5 +694,10 @@
     <string name="settings_eh_show_gallery_pages">ギャラリーページ数を表示</string>
     <string name="settings_eh_show_gallery_pages_summary">リストにギャラリーのページの数量を表示します</string>
 
-    <string name="no_browser_installed">请安装一个浏览器</string>
+    <string name="no_browser_installed">请安装一个浏览器。</string>
+    <string name="toplist_alltime">所有时间</string>
+    <string name="toplist_pastyear">过去一年</string>
+    <string name="toplist_pastmonth">过去一个月</string>
+    <string name="toplist_yesterday">昨天</string>
+    <string name="toplist">排行</string>
 </resources>

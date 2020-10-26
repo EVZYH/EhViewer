@@ -41,6 +41,7 @@ import androidx.fragment.app.FragmentActivity;
 import com.hippo.android.resource.AttrResources;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.ui.MainActivity;
+import com.hippo.ehviewer.widget.EhDrawerLayout;
 import com.hippo.scene.SceneFragment;
 import com.hippo.util.AppHelper;
 
@@ -117,15 +118,6 @@ public abstract class BaseScene extends SceneFragment {
         }
     }
 
-    public boolean isDrawersVisible() {
-        FragmentActivity activity = getActivity();
-        if (activity instanceof MainActivity) {
-            return ((MainActivity) activity).isDrawersVisible();
-        } else {
-            return false;
-        }
-    }
-
     public void showTip(CharSequence message, int length) {
         FragmentActivity activity = getActivity();
         if (activity instanceof MainActivity) {
@@ -156,6 +148,10 @@ public abstract class BaseScene extends SceneFragment {
         if (activity instanceof MainActivity) {
             ((MainActivity) activity).setNavCheckedItem(resId);
         }
+    }
+
+    public void recreateDrawerView() {
+        ((MainActivity)requireActivity()).recreateDrawerView(this);
     }
 
     public final View createDrawerView(LayoutInflater inflater,
@@ -201,9 +197,9 @@ public abstract class BaseScene extends SceneFragment {
                 flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
             }
             decorView.setSystemUiVisibility(flags);
-            ((DrawerLayout) requireActivity().findViewById(R.id.draw_view)).setStatusBarBackgroundColor(set ? Color.TRANSPARENT : AttrResources.getAttrColor(requireContext(), R.attr.colorPrimaryDark));
+            ((EhDrawerLayout) requireActivity().findViewById(R.id.draw_view)).setStatusBarBackgroundColor(set ? Color.TRANSPARENT : AttrResources.getAttrColor(requireContext(), R.attr.colorPrimaryDark));
         } else {
-            ((DrawerLayout) requireActivity().findViewById(R.id.draw_view)).setStatusBarBackgroundColor(AttrResources.getAttrColor(requireContext(), R.attr.colorPrimaryDark));
+            ((EhDrawerLayout) requireActivity().findViewById(R.id.draw_view)).setStatusBarBackgroundColor(AttrResources.getAttrColor(requireContext(), R.attr.colorPrimaryDark));
         }
     }
 

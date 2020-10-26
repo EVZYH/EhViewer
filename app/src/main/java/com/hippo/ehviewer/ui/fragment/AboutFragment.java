@@ -26,10 +26,8 @@ import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.R;
 import com.hippo.ehviewer.ui.CommonOperations;
 import com.hippo.util.AppHelper;
-import com.takisoft.preferencex.PreferenceFragmentCompat;
 
-public class AboutFragment extends PreferenceFragmentCompat
-        implements Preference.OnPreferenceClickListener {
+public class AboutFragment extends BaseSettingsFragment {
 
     private static final String KEY_AUTHOR = "author";
     private static final String KEY_DONATE = "donate";
@@ -61,5 +59,11 @@ public class AboutFragment extends PreferenceFragmentCompat
             CommonOperations.checkUpdate(getActivity(), true);
         }
         return true;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        setTitle(R.string.settings_about);
     }
 }
