@@ -30,7 +30,7 @@ import com.hippo.util.AppHelper;
 public class AboutFragment extends BaseSettingsFragment {
 
     private static final String KEY_AUTHOR = "author";
-    private static final String KEY_DONATE = "donate";
+    //private static final String KEY_DONATE = "donate";
     private static final String KEY_CHECK_FOR_UPDATES = "check_for_updates";
 
     @Override
