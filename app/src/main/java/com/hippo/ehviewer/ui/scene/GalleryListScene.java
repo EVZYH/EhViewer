@@ -85,6 +85,7 @@ import com.hippo.ehviewer.client.parser.GalleryDetailUrlParser;
 import com.hippo.ehviewer.client.parser.GalleryListParser;
 import com.hippo.ehviewer.client.parser.GalleryPageUrlParser;
 import com.hippo.ehviewer.dao.DownloadInfo;
+import com.hippo.ehviewer.dao.DownloadLabel;
 import com.hippo.ehviewer.dao.QuickSearch;
 import com.hippo.ehviewer.download.DownloadManager;
 import com.hippo.ehviewer.ui.CommonOperations;
@@ -113,6 +114,7 @@ import com.hippo.yorozuya.ViewUtils;
 import java.io.File;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -429,19 +431,10 @@ public final class GalleryListScene extends BaseScene
         mFavouriteStatusRouter.removeListener(mFavouriteStatusRouterListener);
     }
 
-    private void setSearchBarHint(Context context, SearchBar searchBar) {
-        Resources resources = context.getResources();
-        Drawable searchImage = DrawableManager.getVectorDrawable(context, R.drawable.v_magnify_x24);
-        SpannableStringBuilder ssb = new SpannableStringBuilder("   ");
-        ssb.append(resources.getString(EhUrl.SITE_EX == Settings.getGallerySite() ?
+    private void setSearchBarHint(SearchBar searchBar) {
+        searchBar.setEditTextHint(getString(EhUrl.SITE_EX == Settings.getGallerySite() ?
                 R.string.gallery_list_search_bar_hint_exhentai :
                 R.string.gallery_list_search_bar_hint_e_hentai));
-        int textSize = (int) (searchBar.getEditTextTextSize() * 1.25);
-        if (searchImage != null) {
-            searchImage.setBounds(0, 0, textSize, textSize);
-            ssb.setSpan(new ImageSpan(searchImage), 1, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        }
-        searchBar.setEditTextHint(ssb);
     }
 
     private void setSearchBarSuggestionProvider(SearchBar searchBar) {
@@ -592,7 +585,7 @@ public final class GalleryListScene extends BaseScene
         mSearchBar.setRightDrawable(mRightDrawable);
         mSearchBar.setHelper(this);
         mSearchBar.setOnStateChangeListener(this);
-        setSearchBarHint(context, mSearchBar);
+        setSearchBarHint(mSearchBar);
         setSearchBarSuggestionProvider(mSearchBar);
 
         mSearchLayout.setHelper(this);
@@ -1015,15 +1008,25 @@ public final class GalleryListScene extends BaseScene
         boolean downloaded = mDownloadManager.getDownloadState(gi.gid) != DownloadInfo.STATE_INVALID;
         boolean favourited = gi.favoriteSlot != -2;
 
-        CharSequence[] items = new CharSequence[]{
+        CharSequence[] items = downloaded ? new CharSequence[]{
                 context.getString(R.string.read),
-                context.getString(downloaded ? R.string.delete_downloads : R.string.download),
+                context.getString(R.string.delete_downloads),
+                context.getString(favourited ? R.string.remove_from_favourites : R.string.add_to_favourites),
+                context.getString(R.string.download_move_dialog_title),
+        } : new CharSequence[]{
+                context.getString(R.string.read),
+                context.getString(R.string.download),
                 context.getString(favourited ? R.string.remove_from_favourites : R.string.add_to_favourites),
         };
 
-        int[] icons = new int[]{
+        int[] icons = downloaded ? new int[]{
                 R.drawable.v_book_open_x24,
-                downloaded ? R.drawable.v_delete_x24 : R.drawable.v_download_x24,
+                R.drawable.v_delete_x24,
+                favourited ? R.drawable.v_heart_broken_x24 : R.drawable.v_heart_x24,
+                R.drawable.v_folder_move_x24,
+        } : new int[]{
+                R.drawable.v_book_open_x24,
+                R.drawable.v_download_x24,
                 favourited ? R.drawable.v_heart_broken_x24 : R.drawable.v_heart_x24,
         };
 
@@ -1055,9 +1058,58 @@ public final class GalleryListScene extends BaseScene
                                 CommonOperations.addToFavorites(activity, gi, new AddToFavoriteListener(context, activity.getStageId(), getTag()));
                             }
                             break;
+                        case 3: // Move
+                            List<DownloadLabel> labelRawList = EhApplication.getDownloadManager(context).getLabelList();
+                            List<String> labelList = new ArrayList<>(labelRawList.size() + 1);
+                            labelList.add(getString(R.string.default_download_label_name));
+                            for (int i = 0, n = labelRawList.size(); i < n; i++) {
+                                labelList.add(labelRawList.get(i).getLabel());
+                            }
+                            String[] labels = labelList.toArray(new String[0]);
+
+                            MoveDialogHelper helper = new MoveDialogHelper(labels, gi);
+
+                            new MaterialAlertDialogBuilder(context)
+                                    .setTitle(R.string.download_move_dialog_title)
+                                    .setItems(labels, helper)
+                                    .show();
+                            break;
                     }
                 }).show();
         return true;
+    }
+
+    private class MoveDialogHelper implements DialogInterface.OnClickListener {
+
+        private final String[] mLabels;
+        private final GalleryInfo mGi;
+
+        public MoveDialogHelper(String[] labels, GalleryInfo gi) {
+            mLabels = labels;
+            mGi = gi;
+        }
+
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+            // Cancel check mode
+            Context context = getContext2();
+            if (null == context) {
+                return;
+            }
+            if (null != mRecyclerView) {
+                mRecyclerView.outOfCustomChoiceMode();
+            }
+
+            DownloadManager downloadManager = EhApplication.getDownloadManager(context);
+            DownloadInfo downloadInfo = downloadManager.getDownloadInfo(mGi.gid);
+            if (downloadInfo == null) {
+                return;
+            }
+
+            String label = which == 0 ? null : mLabels[which];
+
+            downloadManager.changeLabel(Collections.singletonList(downloadInfo), label);
+        }
     }
 
     private void showActionFab() {

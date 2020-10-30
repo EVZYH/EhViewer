@@ -151,7 +151,7 @@ public abstract class BaseScene extends SceneFragment {
     }
 
     public void recreateDrawerView() {
-        ((MainActivity)requireActivity()).recreateDrawerView(this);
+        ((MainActivity) requireActivity()).recreateDrawerView(this);
     }
 
     public final View createDrawerView(LayoutInflater inflater,
