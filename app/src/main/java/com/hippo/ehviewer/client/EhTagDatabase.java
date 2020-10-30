@@ -413,6 +413,7 @@ public class EhTagDatabase {
 
         }
         return searchHints;
+    }
 
     private boolean containsIgnoreSpace(String text, String key){
         return text.replace(" ","").contains(key.replace(" ",""));
