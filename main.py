@@ -120,6 +120,6 @@ if __name__ == "__main__":
         ('reclass.md', 'r')
     )
     tags = [x for f, p in files for x in parseMarkdownFile(os.path.join('Database', 'database', f), p)]
-    saveTags('tag-translations-v2/tag-translations-zh-rCN', tags)
+    saveTags('tag-translations/tag-translations-zh-rCN', tags)
 
     removeMarkdownFiles()
