@@ -9,6 +9,8 @@ import collections
 import struct
 import base64
 import hashlib
+import gzip
+import shutil
 from bs4 import BeautifulSoup
 
 TRANSLATION_PATCH = {
@@ -70,7 +72,7 @@ def saveTags(path, tags):
         for x, y in tags:
             f.write(x.encode())
             f.write(struct.pack('b', ord('\r')))
-            f.write(base64.b64encode(y.encode()))
+            f.write(y.encode())
             f.write(struct.pack('b', ord('\n')))
         # get file size
         f.seek(0, 2)
@@ -118,6 +120,6 @@ if __name__ == "__main__":
         ('reclass.md', 'r')
     )
     tags = [x for f, p in files for x in parseMarkdownFile(os.path.join('Database', 'database', f), p)]
-    saveTags('tag-translations/tag-translations-zh-rCN', tags)
+    saveTags('tag-translations-v2/tag-translations-zh-rCN', tags)
 
     removeMarkdownFiles()
