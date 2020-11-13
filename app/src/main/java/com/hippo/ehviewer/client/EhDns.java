@@ -22,6 +22,8 @@ package com.hippo.ehviewer.client;
 
 import android.content.Context;
 
+import androidx.annotation.NonNull;
+
 import com.hippo.ehviewer.EhApplication;
 import com.hippo.ehviewer.Hosts;
 import com.hippo.ehviewer.Settings;
@@ -35,6 +37,9 @@ import java.util.List;
 import java.util.Map;
 
 import okhttp3.Dns;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.dnsoverhttps.DnsOverHttps;
 
 public class EhDns implements Dns {
 
@@ -45,17 +50,35 @@ public class EhDns implements Dns {
         put(map, "e-hentai.org", "104.20.26.25");
         put(map, "repo.e-hentai.org", "94.100.29.73");
         put(map, "forums.e-hentai.org", "94.100.18.243");
-        put(map, "ehgt.org", "81.171.14.118");
+        put(map, "ehgt.org", "81.171.10.48");
         put(map, "ul.ehgt.org", "94.100.24.82");
-        put(map, "github.com", "192.30.255.112");
+        put(map, "github.com", "192.30.255.113");
         put(map, "raw.githubusercontent.com", "151.101.0.133");
         builtInHosts = map;
     }
 
     private final Hosts hosts;
+    private static DnsOverHttps dnsOverHttps;
 
     public EhDns(Context context) {
         hosts = EhApplication.getHosts(context);
+        DnsOverHttps.Builder builder = new DnsOverHttps.Builder()
+                .client(new OkHttpClient.Builder().build())
+                .url(HttpUrl.get("https://cloudflare-dns.com/dns-query"));
+        try {
+            builder.bootstrapDnsHosts(InetAddress.getByName("162.159.36.1"),
+                    InetAddress.getByName("1.1.1.1"),
+                    InetAddress.getByName("1.0.0.1"),
+                    InetAddress.getByName("162.159.46.1"),
+                    InetAddress.getByName("162.159.132.53"),
+                    InetAddress.getByName("2606:4700:4700::1111"),
+                    InetAddress.getByName("2606:4700:4700::1001"),
+                    InetAddress.getByName("2606:4700:4700::0064"),
+                    InetAddress.getByName("2606:4700:4700::6400"));
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        dnsOverHttps = builder.post(true).build();
     }
 
     private static void put(Map<String, InetAddress> map, String host, String ip) {
@@ -65,8 +88,9 @@ public class EhDns implements Dns {
         }
     }
 
+    @NonNull
     @Override
-    public List<InetAddress> lookup(String hostname) throws UnknownHostException {
+    public List<InetAddress> lookup(@NonNull String hostname) throws UnknownHostException {
         InetAddress inetAddress = hosts.get(hostname);
         if (inetAddress != null) {
             return Collections.singletonList(inetAddress);
@@ -76,6 +100,12 @@ public class EhDns implements Dns {
             inetAddress = builtInHosts.get(hostname);
             if (inetAddress != null) {
                 return Collections.singletonList(inetAddress);
+            }
+        }
+        if (Settings.getDoH()) {
+            List<InetAddress> inetAddresses = dnsOverHttps.lookup(hostname);
+            if (inetAddresses != null && inetAddresses.size() > 0) {
+                return inetAddresses;
             }
         }
 
