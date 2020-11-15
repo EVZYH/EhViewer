@@ -274,9 +274,9 @@ public class Settings {
 
     private static void fixDefaultValue(Context context) {
         // Enable builtin hosts if the country is CN
-        if (!sSettingsPre.contains(KEY_DOH)) {
+        if (!sSettingsPre.contains(KEY_BUILT_IN_HOSTS)) {
             if ("CN".equals(Locale.getDefault().getCountry())) {
-                putDoH(true);
+                putBuiltInHosts(true);
             }
         }
     }
