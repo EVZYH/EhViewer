@@ -21,6 +21,8 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.Display;
+import android.view.WindowManager;
 
 import androidx.annotation.DimenRes;
 import androidx.annotation.NonNull;
@@ -133,6 +135,8 @@ public class Settings {
     private static final boolean DEFAULT_CELLULAR_NETWORK_WARNING = false;
     private static final String KEY_NIGHT_MODE = "night_mode";
     private static final String DEFAULT_NIGHT_MODE = "-1";
+    private static final String KEY_E_INK_MODE = "e_ink_mode";
+    private static final boolean DEFAULT_E_INK_MODE = false;
     /********************
      ****** Read
      ********************/
@@ -175,6 +179,8 @@ public class Settings {
     private static final int DEFAULT_PRELOAD_IMAGE = 5;
     private static final String KEY_DOWNLOAD_ORIGIN_IMAGE = "download_origin_image";
     private static final boolean DEFAULT_DOWNLOAD_ORIGIN_IMAGE = false;
+    private static final String KEY_READ_THEME = "read_theme";
+    private static final int DEFAULT_READ_THEME = 1;
     /********************
      ****** Favorites
      ********************/
@@ -277,6 +283,24 @@ public class Settings {
         if (!sSettingsPre.contains(KEY_BUILT_IN_HOSTS)) {
             if ("CN".equals(Locale.getDefault().getCountry())) {
                 putBuiltInHosts(true);
+            }
+        }
+        // Enable show tag translations if the country is CN
+        if (!sSettingsPre.contains(KEY_SHOW_TAG_TRANSLATIONS)) {
+            if ("CN".equals(Locale.getDefault().getCountry())) {
+                putShowTagTranslations(true);
+            }
+        }
+        if (!sSettingsPre.contains(KEY_E_INK_MODE)) {
+            WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+            // Probably an E-Ink device?
+            if (wm != null) {
+                Display display = wm.getDefaultDisplay();
+                // Someone may install EHViewer on a device with no screen?
+                if (display != null && display.getRefreshRate() < 5.0) {
+                    putReadTheme(2);
+                    putEInkMode(true);
+                }
             }
         }
     }
@@ -528,6 +552,10 @@ public class Settings {
         return getBoolean(KEY_SHOW_TAG_TRANSLATIONS, DEFAULT_SHOW_TAG_TRANSLATIONS);
     }
 
+    public static void putShowTagTranslations(boolean value) {
+        putBoolean(KEY_SHOW_TAG_TRANSLATIONS, value);
+    }
+
     public static int getDefaultCategories() {
         return getInt(KEY_DEFAULT_CATEGORIES, DEFAULT_DEFAULT_CATEGORIES);
     }
@@ -556,6 +584,14 @@ public class Settings {
         sEhConfig.excludedLanguages = value;
         sEhConfig.setDirty();
         putString(KEY_EXCLUDED_LANGUAGES, value);
+    }
+
+    public static void putEInkMode(boolean value) {
+        putBoolean(KEY_E_INK_MODE, value);
+    }
+
+    public static boolean getEInkMode() {
+        return getBoolean(KEY_E_INK_MODE, DEFAULT_E_INK_MODE);
     }
 
     public static boolean getCellularNetworkWarning() {
@@ -667,6 +703,14 @@ public class Settings {
 
     public static void putScreenLightness(int value) {
         putInt(KEY_SCREEN_LIGHTNESS, value);
+    }
+
+    public static int getReadTheme() {
+        return getIntFromStr(KEY_READ_THEME, DEFAULT_READ_THEME);
+    }
+
+    public static void putReadTheme(int value) {
+        putIntToStr(KEY_READ_THEME, value);
     }
 
     public static boolean getEnabledSecurity() {

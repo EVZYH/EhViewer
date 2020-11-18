@@ -519,7 +519,6 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         mTip.setCompoundDrawables(null, drawable, null, null);
         mTip.setOnClickListener(this);
 
-        boolean isDarkTheme = !AttrResources.getAttrBoolean(context, R.attr.isLightTheme);
         mHeader = ViewUtils.$$(mainView, R.id.header);
         mColorBg = ViewUtils.$$(mHeader, R.id.color_bg);
         mThumb = (LoadImageView) ViewUtils.$$(mHeader, R.id.thumb);
@@ -1040,9 +1039,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
     }
 
     private String getAllRatingText(float rating, int ratingCount) {
-        Resources resources = getResources2();
-        AssertUtils.assertNotNull(resources);
-        return resources.getString(R.string.rating_text, getRatingText(rating), rating, ratingCount);
+        return getString(R.string.rating_text, getRatingText(rating), rating, ratingCount);
     }
 
     private void setTransitionName() {
