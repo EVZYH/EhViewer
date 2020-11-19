@@ -279,10 +279,10 @@ public class Settings {
     }
 
     private static void fixDefaultValue(Context context) {
-        // Enable builtin hosts if the country is CN
-        if (!sSettingsPre.contains(KEY_BUILT_IN_HOSTS)) {
+        // Enable DoH if the country is CN
+        if (!sSettingsPre.contains(KEY_DOH)) {
             if ("CN".equals(Locale.getDefault().getCountry())) {
-                putBuiltInHosts(true);
+                putDoH(true);
             }
         }
         // Enable show tag translations if the country is CN
