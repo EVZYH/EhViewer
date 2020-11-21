@@ -83,7 +83,6 @@ public class SearchBar extends MaterialCardView implements View.OnClickListener,
     private SearchEditText mEditText;
     private EasyRecyclerView mListView;
     private View mListContainer;
-    private View mListHeader;
 
     private ViewTransition mViewTransition;
 
@@ -125,7 +124,6 @@ public class SearchBar extends MaterialCardView implements View.OnClickListener,
         mEditText = (SearchEditText) ViewUtils.$$(this, R.id.search_edit_text);
         mListContainer = ViewUtils.$$(this, R.id.list_container);
         mListView = (EasyRecyclerView) ViewUtils.$$(mListContainer, R.id.search_bar_list);
-        mListHeader = ViewUtils.$$(mListContainer, R.id.list_header);
 
         mViewTransition = new ViewTransition(mTitleTextView, mEditText);
 
@@ -148,32 +146,10 @@ public class SearchBar extends MaterialCardView implements View.OnClickListener,
                 LinearDividerItemDecoration.VERTICAL,
                 AttrResources.getAttrColor(context, R.attr.dividerColor),
                 LayoutUtils.dp2pix(context, 1));
+        decoration.setShowFirstDivider(true);
         decoration.setShowLastDivider(false);
         mListView.addItemDecoration(decoration);
         mListView.setLayoutManager(layoutManager);
-        mListView.setOnItemClickListener((parent, view, position, id) -> {
-            if (position < mSuggestionList.size()) {
-                mSuggestionList.get(position).onClick();
-                return true;
-            } else {
-                return false;
-            }
-        });
-        mListView.setOnItemLongClickListener((parent, view, position, id) -> {
-            if (position < mSuggestionList.size()) {
-                return mSuggestionList.get(position).onLongClick();
-            } else {
-                return false;
-            }
-        });
-    }
-
-    private void addListHeader() {
-        mListHeader.setVisibility(VISIBLE);
-    }
-
-    private void removeListHeader() {
-        mListHeader.setVisibility(GONE);
     }
 
     private void updateSuggestions() {
@@ -192,6 +168,11 @@ public class SearchBar extends MaterialCardView implements View.OnClickListener,
             }
         }
 
+        String[] keywords = mSearchDatabase.getSuggestions(text, 128);
+        for (String keyword : keywords) {
+            mSuggestionList.add(new KeywordSuggestion(keyword));
+        }
+
         EhTagDatabase ehTagDatabase = EhTagDatabase.getInstance(getContext());
                 if (!TextUtils.isEmpty(text) && ehTagDatabase != null && !text.endsWith(" ")) {
             String[] s = text.split(" ");
@@ -206,16 +187,6 @@ public class SearchBar extends MaterialCardView implements View.OnClickListener,
             }
         }
 
-        String[] keywords = mSearchDatabase.getSuggestions(text, 128);
-        for (String keyword : keywords) {
-            mSuggestionList.add(new KeywordSuggestion(keyword));
-        }
-
-        if (mSuggestionList.size() == 0) {
-            removeListHeader();
-        } else {
-            addListHeader();
-        }
         mSuggestionAdapter.notifyDataSetChanged();
 
         if (scrollToTop) {
@@ -571,6 +542,19 @@ public class SearchBar extends MaterialCardView implements View.OnClickListener,
                 holder.text2.setVisibility(View.VISIBLE);
                 holder.text2.setText(text2);
             }
+
+            holder.itemView.setOnClickListener(v -> {
+                if (position < mSuggestionList.size()) {
+                    mSuggestionList.get(position).onClick();
+                }
+            });
+            holder.itemView.setOnLongClickListener(v -> {
+                if (position < mSuggestionList.size()) {
+                    return mSuggestionList.get(position).onLongClick();
+                } else {
+                    return false;
+                }
+            });
         }
 
         @Override
