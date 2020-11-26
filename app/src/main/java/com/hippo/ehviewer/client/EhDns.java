@@ -50,9 +50,9 @@ public class EhDns implements Dns {
         put(map, "e-hentai.org", "104.20.26.25");
         put(map, "repo.e-hentai.org", "94.100.29.73");
         put(map, "forums.e-hentai.org", "94.100.18.243");
-        put(map, "ehgt.org", "81.171.10.48");
+        put(map, "ehgt.org", "178.162.139.24");
         put(map, "ul.ehgt.org", "94.100.24.82");
-        put(map, "github.com", "192.30.255.113");
+        put(map, "github.com", "192.30.255.112");
         put(map, "raw.githubusercontent.com", "151.101.0.133");
         builtInHosts = map;
     }
