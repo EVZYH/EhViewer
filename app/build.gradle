@@ -5,7 +5,7 @@ android {
     compileSdkVersion 30
     ndkVersion "21.3.6528147"
     defaultConfig {
-        applicationId "com.hippo.ehviewer"
+        applicationId "io.github.evzyh.ehviewer"
         minSdkVersion 21
         targetSdkVersion 30
         versionCode 124
@@ -31,11 +31,9 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            buildConfigField 'String', 'FILE_PROVIDER_AUTHORITY', '"com.hippo.ehviewer.fileprovider"'
         }
         debug {
             applicationIdSuffix ".debug"
-            buildConfigField 'String', 'FILE_PROVIDER_AUTHORITY', '"com.hippo.ehviewer.debug.fileprovider"'
         }
     }
 
