@@ -8,8 +8,8 @@ android {
         applicationId "io.github.evzyh.ehviewer"
         minSdkVersion 21
         targetSdkVersion 30
-        versionCode 124
-        versionName "1.7.11"
+        versionCode 125
+        versionName "1.7.12"
         resConfigs "zh", "zh-rCN", "zh-rHK", "zh-rTW",
                 "es", "ja", "ko", "fr", "de", "th"
         testOptions.unitTests.includeAndroidResources = true
