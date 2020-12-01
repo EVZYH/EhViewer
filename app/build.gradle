@@ -3,13 +3,12 @@ apply plugin: 'com.google.android.gms.oss-licenses-plugin'
 
 android {
     compileSdkVersion 30
-    buildToolsVersion "30.0.2"
     ndkVersion "21.3.6528147"
     defaultConfig {
         applicationId "io.github.evzyh.ehviewer"
         minSdkVersion 21
         targetSdkVersion 30
-        versionCode 125
+        versionCode 126
         versionName "1.7.12"
         resConfigs "zh", "zh-rCN", "zh-rHK", "zh-rTW",
                 "es", "ja", "ko", "fr", "de", "th"
