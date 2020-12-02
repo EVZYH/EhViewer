@@ -31,7 +31,6 @@ import com.hippo.ehviewer.Settings;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,16 +42,17 @@ import okhttp3.dnsoverhttps.DnsOverHttps;
 
 public class EhDns implements Dns {
 
-    private static final Map<String, InetAddress> builtInHosts;
+    private static final Map<String, List<InetAddress>> builtInHosts;
 
     static {
-        Map<String, InetAddress> map = new HashMap<>();
+        Map<String, List<InetAddress>> map = new HashMap<>();
         put(map, "e-hentai.org", "104.20.26.25");
-        put(map, "repo.e-hentai.org", "94.100.29.73");
+        put(map, "exhentai.org", "178.175.132.22+178.175.129.254+178.175.132.20");
+        put(map, "repo.e-hentai.org", "94.100.28.57+94.100.29.73");
         put(map, "forums.e-hentai.org", "94.100.18.243");
-        put(map, "ehgt.org", "178.162.139.24");
-        put(map, "ul.ehgt.org", "94.100.24.82");
-        put(map, "github.com", "192.30.255.112");
+        put(map, "ehgt.org", "37.48.89.44+178.162.139.24+81.171.10.48");
+        put(map, "ul.ehgt.org", "94.100.24.82+94.100.24.72");
+        put(map, "github.com", "192.30.255.113+192.30.255.112");
         put(map, "raw.githubusercontent.com", "151.101.0.133");
         builtInHosts = map;
     }
@@ -81,34 +81,34 @@ public class EhDns implements Dns {
         dnsOverHttps = builder.post(true).build();
     }
 
-    private static void put(Map<String, InetAddress> map, String host, String ip) {
-        InetAddress address = Hosts.toInetAddress(host, ip);
-        if (address != null) {
-            map.put(host, address);
+    private static void put(Map<String, List<InetAddress>> map, String host, String ip_s) {
+        String[] ip_l = ip_s.split("\\+");
+        InetAddress[] addr_l = new InetAddress[ip_l.length];
+        for (int i = 0;i < ip_l.length;i++) {
+            addr_l[i] = Hosts.toInetAddress(host, ip_l[i]);
         }
+        map.put(host, Arrays.asList(addr_l));
     }
 
     @NonNull
     @Override
     public List<InetAddress> lookup(@NonNull String hostname) throws UnknownHostException {
-        InetAddress inetAddress = hosts.get(hostname);
-        if (inetAddress != null) {
-            return Collections.singletonList(inetAddress);
+        List<InetAddress> inetAddresses = hosts.get(hostname);
+        if (inetAddresses != null) {
+            return inetAddresses;
         }
-
         if (Settings.getBuiltInHosts()) {
-            inetAddress = builtInHosts.get(hostname);
-            if (inetAddress != null) {
-                return Collections.singletonList(inetAddress);
+            inetAddresses = builtInHosts.get(hostname);
+            if (inetAddresses != null) {
+                return inetAddresses;
             }
         }
         if (Settings.getDoH()) {
-            List<InetAddress> inetAddresses = dnsOverHttps.lookup(hostname);
+            inetAddresses = dnsOverHttps.lookup(hostname);
             if (inetAddresses != null && inetAddresses.size() > 0) {
                 return inetAddresses;
             }
         }
-
         try {
             return Arrays.asList(InetAddress.getAllByName(hostname));
         } catch (NullPointerException e) {

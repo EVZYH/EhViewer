@@ -35,6 +35,7 @@ import com.hippo.util.SqlUtils;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Hosts {
@@ -57,6 +58,7 @@ public class Hosts {
                 .insertColumn(TABLE_HOSTS, COLUMN_IP, String.class)
                 .build(context, name, DB_VERSION);
         db = helper.getWritableDatabase();
+        put("example.com", "127.0.0.1+127.0.0.2");
     }
 
     @Nullable
@@ -120,8 +122,16 @@ public class Hosts {
     /**
      * Returns true if the ip is valid.
      */
-    public static boolean isValidIp(String ip) {
-        return ip != null && (parseV4(ip) != null || parseV6(ip) != null);
+    public static boolean isValidIp(String ip_list) {
+        if (ip_list == null) {
+            return false;
+        }
+        for (String ip: ip_list.split("\\+")) {
+            if (parseV4(ip) == null && parseV6(ip) == null) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // org.xbill.DNS.Address.parseV4
@@ -265,16 +275,19 @@ public class Hosts {
      * Gets a InetAddress with the host.
      */
     @Nullable
-    public InetAddress get(String host) {
+    public List<InetAddress> get(String host) {
         if (!isValidHost(host)) {
             return null;
         }
-
         Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_HOSTS + " WHERE " + COLUMN_HOST + " = ?;", new String[]{host});
         try {
             if (cursor.moveToNext()) {
-                String ip = SqlUtils.getString(cursor, COLUMN_IP, null);
-                return toInetAddress(host, ip);
+                String[] ip_l = SqlUtils.getString(cursor, COLUMN_IP, null).split("\\+");
+                InetAddress[] addr_l = new InetAddress[ip_l.length];
+                for (int i = 0;i < ip_l.length;i++) {
+                    addr_l[i] = toInetAddress(host, ip_l[i]);
+                }
+                return Arrays.asList(addr_l);
             } else {
                 return null;
             }
@@ -331,18 +344,11 @@ public class Hosts {
             while (cursor.moveToNext()) {
                 String host = SqlUtils.getString(cursor, COLUMN_HOST, null);
                 String ip = SqlUtils.getString(cursor, COLUMN_IP, null);
-
-                InetAddress inetAddress = toInetAddress(host, ip);
-                if (inetAddress == null) {
-                    continue;
-                }
-
                 result.add(new Pair<>(host, ip));
             }
         } finally {
             cursor.close();
         }
-
         return result;
     }
 }
