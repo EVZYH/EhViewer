@@ -58,7 +58,6 @@ public class Hosts {
                 .insertColumn(TABLE_HOSTS, COLUMN_IP, String.class)
                 .build(context, name, DB_VERSION);
         db = helper.getWritableDatabase();
-        put("example.com", "127.0.0.1+127.0.0.2");
     }
 
     @Nullable
