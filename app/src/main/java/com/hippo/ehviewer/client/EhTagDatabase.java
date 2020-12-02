@@ -39,7 +39,6 @@ import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
@@ -56,7 +55,6 @@ import okio.Okio;
 
 public class EhTagDatabase {
 
-    private static final Base64.Decoder decoder = Base64.getDecoder();
     private static final Map<String, String> NAMESPACE_TO_PREFIX = new HashMap<>();
     private static volatile EhTagDatabase instance;
     // TODO more lock for different language
@@ -79,20 +77,9 @@ public class EhTagDatabase {
 
     public EhTagDatabase(String name, BufferedSource source) throws IOException {
         this.name = name;
-        String[] tmp;
-        StringBuilder buffer = new StringBuilder("");
-        source.readInt();
-        for (String i: source.readUtf8().split("\n")) {
-            tmp = i.split("\r", 2);
-            buffer.append(tmp[0]);
-            buffer.append("\r");
-            buffer.append(new String(decoder.decode(tmp[1]),TextUrl.UTF_8));
-            buffer.append("\n");
-        }
-        byte[] b = buffer.toString().getBytes(TextUrl.UTF_8);
-        int totalBytes = b.length;
+        int totalBytes = source.readInt();
         tags = new byte[totalBytes];
-        System.arraycopy(b, 0, tags ,0, totalBytes);
+        source.readFully(tags);
     }
 
     @Nullable
