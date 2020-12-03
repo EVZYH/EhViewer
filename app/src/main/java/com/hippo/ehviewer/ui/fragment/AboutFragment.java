@@ -55,8 +55,8 @@ public class AboutFragment extends BaseSettingsFragment {
         if (KEY_AUTHOR.equals(key)) {
             AppHelper.sendEmail(requireActivity(), EhApplication.getDeveloperEmail(),
                     "About EhViewer", null);
-        } else if (KEY_CHECK_FOR_UPDATES.equals(key)) {
-            CommonOperations.checkUpdate(getActivity(), true);
+        //} else if (KEY_CHECK_FOR_UPDATES.equals(key)) {
+        //    CommonOperations.checkUpdate(getActivity(), true);
         }
         return true;
     }

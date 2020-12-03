@@ -83,7 +83,7 @@ public class Settings {
     public static final String KEY_IMAGE_RESOLUTION = "image_size";
     public static final String DEFAULT_IMAGE_RESOLUTION = EhConfig.IMAGE_SIZE_AUTO;
     public static final int INVALID_DEFAULT_FAV_SLOT = -2;
-    public static final String KEY_ENABLE_ANALYTICS = "enable_analytics";
+    //public static final String KEY_ENABLE_ANALYTICS = "enable_analytics";
     /********************
      ****** Advanced
      ********************/
@@ -223,14 +223,14 @@ public class Settings {
     private static final String KEY_DEFAULT_FAV_SLOT = "default_favorite_2";
     private static final int DEFAULT_DEFAULT_FAV_SLOT = INVALID_DEFAULT_FAV_SLOT;
     /********************
-     ****** Analytics
-     ********************/
+    ****** Analytics
+    *******************
     private static final String KEY_ASK_ANALYTICS = "ask_analytics";
     private static final boolean DEFAULT_ASK_ANALYTICS = true;
     private static final boolean DEFAULT_ENABLE_ANALYTICS = false;
     private static final String KEY_USER_ID = "user_id";
     private static final String FILENAME_USER_ID = ".user_id";
-    private static final int LENGTH_USER_ID = 32;
+    private static final int LENGTH_USER_ID = 32;*/
     /********************
      ****** Update
      ********************/
@@ -917,7 +917,7 @@ public class Settings {
     public static void putDefaultFavSlot(int value) {
         putInt(KEY_DEFAULT_FAV_SLOT, value);
     }
-
+    /*
     public static boolean getAskAnalytics() {
         return getBoolean(KEY_ASK_ANALYTICS, DEFAULT_ASK_ANALYTICS);
     }
@@ -991,7 +991,7 @@ public class Settings {
 
         return true;
     }
-
+    */
     public static boolean getBetaUpdateChannel() {
         return getBoolean(KEY_BETA_UPDATE_CHANNEL, DEFAULT_BETA_UPDATE_CHANNEL);
     }
