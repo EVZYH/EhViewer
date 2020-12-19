@@ -288,8 +288,8 @@ public class Settings {
                 putDoH(true);
             }
         }
-        // Enable domain fronting if SDK version >=10 and the country is CN
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !sSettingsPre.contains(KEY_DOMAIN_FRONTING)) {
+        // Enable domain fronting if the country is CN
+        if (!sSettingsPre.contains(KEY_DOMAIN_FRONTING)) {
             if ("CN".equals(Locale.getDefault().getCountry())) {
                 putDF(true);
             }

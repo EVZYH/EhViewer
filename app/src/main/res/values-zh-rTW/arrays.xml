@@ -18,9 +18,9 @@
 
     <string-array name="tag_translation_metadata" tools:ignore="InconsistentArrays">
         <item>tag-translations-zh-rCN.sha1</item>
-        <item>https://github.com/EVZYH/tag-translations/raw/master/tag-translations/tag-translations-zh-rCN.sha1</item>
+        <item>https://raw.githubusercontent.com/EVZYH/tag-translations/master/tag-translations/tag-translations-zh-rCN.sha1</item>
         <item>tag-translations-zh-rCN</item>
-        <item>https://github.com/EVZYH/tag-translations/raw/master/tag-translations/tag-translations-zh-rCN</item>
+        <item>https://raw.githubusercontent.com/EVZYH/tag-translations/master/tag-translations/tag-translations-zh-rCN</item>
     </string-array>
 
 </resources>

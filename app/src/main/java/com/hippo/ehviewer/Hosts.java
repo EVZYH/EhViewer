@@ -47,11 +47,10 @@ public class Hosts {
 
     private static final int DB_VERSION = VERSION_1;
 
-    private final SQLiteOpenHelper helper;
     private final SQLiteDatabase db;
 
     public Hosts(Context context, String name) {
-        helper = new MSQLiteBuilder()
+        SQLiteOpenHelper helper = new MSQLiteBuilder()
                 .version(VERSION_1)
                 .createTable(TABLE_HOSTS)
                 .insertColumn(TABLE_HOSTS, COLUMN_HOST, String.class)
@@ -278,29 +277,23 @@ public class Hosts {
         if (!isValidHost(host)) {
             return null;
         }
-        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_HOSTS + " WHERE " + COLUMN_HOST + " = ?;", new String[]{host});
-        try {
+        try (Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_HOSTS + " WHERE " + COLUMN_HOST + " = ?;", new String[]{host})) {
             if (cursor.moveToNext()) {
                 String[] ip_l = SqlUtils.getString(cursor, COLUMN_IP, null).split("\\+");
                 InetAddress[] addr_l = new InetAddress[ip_l.length];
-                for (int i = 0;i < ip_l.length;i++) {
+                for (int i = 0; i < ip_l.length; i++) {
                     addr_l[i] = toInetAddress(host, ip_l[i]);
                 }
                 return Arrays.asList(addr_l);
             } else {
                 return null;
             }
-        } finally {
-            cursor.close();
         }
     }
 
     private boolean contains(String host) {
-        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_HOSTS + " WHERE " + COLUMN_HOST + " = ?;", new String[]{host});
-        try {
+        try (Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_HOSTS + " WHERE " + COLUMN_HOST + " = ?;", new String[]{host})) {
             return cursor.moveToNext();
-        } finally {
-            cursor.close();
         }
     }
 
@@ -338,15 +331,12 @@ public class Hosts {
     public List<Pair<String, String>> getAll() {
         List<Pair<String, String>> result = new ArrayList<>();
 
-        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_HOSTS + ";", null);
-        try {
+        try (Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_HOSTS + ";", null)) {
             while (cursor.moveToNext()) {
                 String host = SqlUtils.getString(cursor, COLUMN_HOST, null);
                 String ip = SqlUtils.getString(cursor, COLUMN_IP, null);
                 result.add(new Pair<>(host, ip));
             }
-        } finally {
-            cursor.close();
         }
         return result;
     }

@@ -46,14 +46,12 @@ public class EhDns implements Dns {
 
     static {
         Map<String, List<InetAddress>> map = new HashMap<>();
+        put(map, "exhentai.org", "178.175.129.252+178.175.128.252+178.175.132.22+178.175.129.254");
         put(map, "e-hentai.org", "104.20.26.25");
-        put(map, "exhentai.org", "178.175.132.22+178.175.129.254+178.175.132.20");
-        put(map, "repo.e-hentai.org", "94.100.28.57+94.100.29.73");
+        put(map, "repo.e-hentai.org", "94.100.28.57");
         put(map, "forums.e-hentai.org", "94.100.18.243");
-        put(map, "ehgt.org", "37.48.89.44+178.162.139.24+81.171.10.48");
+        put(map, "ehgt.org", "37.48.89.44+178.162.139.24+178.162.140.212+81.171.10.48");
         put(map, "ul.ehgt.org", "94.100.24.82+94.100.24.72");
-        put(map, "github.com", "192.30.255.113+192.30.255.112");
-        put(map, "raw.githubusercontent.com", "151.101.0.133");
         builtInHosts = map;
     }
 
@@ -81,13 +79,13 @@ public class EhDns implements Dns {
         dnsOverHttps = builder.post(true).build();
     }
 
-    private static void put(Map<String, List<InetAddress>> map, String host, String ip_s) {
-        String[] ip_l = ip_s.split("\\+");
-        InetAddress[] addr_l = new InetAddress[ip_l.length];
-        for (int i = 0;i < ip_l.length;i++) {
-            addr_l[i] = Hosts.toInetAddress(host, ip_l[i]);
+    private static void put(Map<String, List<InetAddress>> map, String host, String ips) {
+        String[] ipList = ips.split("\\+");
+        InetAddress[] addresses = new InetAddress[ipList.length];
+        for (int i = 0;i < ipList.length;i++) {
+            addresses[i] = Hosts.toInetAddress(host, ipList[i]);
         }
-        map.put(host, Arrays.asList(addr_l));
+        map.put(host, Arrays.asList(addresses));
     }
 
     @NonNull
@@ -105,7 +103,7 @@ public class EhDns implements Dns {
         }
         if (Settings.getDoH()) {
             inetAddresses = dnsOverHttps.lookup(hostname);
-            if (inetAddresses != null && inetAddresses.size() > 0) {
+            if (inetAddresses.size() > 0) {
                 return inetAddresses;
             }
         }
