@@ -22,13 +22,16 @@ public class PrivacyFragment extends BasePreferenceFragment {
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        setTitle(R.string.settings_privacy);
+    public void onStart() {
+        super.onStart();
         Preference patternProtection = findPreference(KEY_PATTERN_PROTECTION);
         patternProtection.setSummary(TextUtils.isEmpty(Settings.getSecurity()) ?
                 R.string.settings_privacy_pattern_protection_not_set :
                 R.string.settings_privacy_pattern_protection_set);
     }
 
+    @Override
+    public int getFragmentTitle() {
+        return R.string.settings_privacy;
+    }
 }

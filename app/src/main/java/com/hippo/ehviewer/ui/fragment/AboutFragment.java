@@ -62,8 +62,7 @@ public class AboutFragment extends BasePreferenceFragment {
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        setTitle(R.string.settings_about);
+    public int getFragmentTitle() {
+        return R.string.settings_about;
     }
 }
