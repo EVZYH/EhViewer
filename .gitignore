@@ -6,6 +6,5 @@
 *.iml
 .idea
 /captures
-app/release
-app/debug
+release
 google-services.json
