@@ -16,13 +16,9 @@
 
 package com.hippo.ehviewer.download;
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.SystemClock;
@@ -30,7 +26,9 @@ import android.util.Log;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
+import androidx.core.app.NotificationChannelCompat;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 
 import com.hippo.ehviewer.EhApplication;
@@ -79,7 +77,7 @@ public class DownloadService extends Service implements DownloadManager.Download
     private static int sFinishedCount;
     private static int sDownloadedCount;
     @Nullable
-    private NotificationManager mNotifyManager;
+    private NotificationManagerCompat mNotifyManager;
     @Nullable
     private DownloadManager mDownloadManager;
     private NotificationCompat.Builder mDownloadingBuilder;
@@ -103,13 +101,22 @@ public class DownloadService extends Service implements DownloadManager.Download
         super.onCreate();
 
         CHANNEL_ID = getPackageName() + ".download";
-        mNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && mNotifyManager != null) {
-            mNotifyManager.createNotificationChannel(new NotificationChannel(CHANNEL_ID, getString(R.string.download_service),
-                    NotificationManager.IMPORTANCE_LOW));
-        }
+        mNotifyManager = NotificationManagerCompat.from(this);
+        mNotifyManager.createNotificationChannel(
+                new NotificationChannelCompat.Builder(CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_LOW)
+                        .setName(getString(R.string.download_service))
+                        .build());
         mDownloadManager = EhApplication.getDownloadManager(getApplicationContext());
         mDownloadManager.setDownloadListener(this);
+
+        ensureDownloadingBuilder();
+
+        mDownloadingBuilder.setContentTitle(getString(R.string.download_service))
+                .setContentText(null)
+                .setSubText(null)
+                .setProgress(0, 0, true);
+
+        startForeground(ID_DOWNLOADING, mDownloadingBuilder.build());
     }
 
     @Override
@@ -307,7 +314,7 @@ public class DownloadService extends Service implements DownloadManager.Download
 
         mDownloadingBuilder.setContentTitle(EhUtils.getSuitableTitle(info))
                 .setContentText(null)
-                .setContentInfo(null)
+                .setSubText(null)
                 .setProgress(0, 0, true)
                 .setContentIntent(piActivity);
 
@@ -324,7 +331,7 @@ public class DownloadService extends Service implements DownloadManager.Download
         if (speed < 0) {
             speed = 0;
         }
-        String text = FileUtils.humanReadableByteCount(speed, false) + "/S";
+        String text = FileUtils.humanReadableByteCount(speed, false) + "/s";
         long remaining = info.remaining;
         if (remaining >= 0) {
             text = getString(R.string.download_speed_text_2, text, ReadableTime.getShortTimeInterval(remaining));
@@ -333,7 +340,8 @@ public class DownloadService extends Service implements DownloadManager.Download
         }
         mDownloadingBuilder.setContentTitle(EhUtils.getSuitableTitle(info))
                 .setContentText(text)
-                .setContentInfo(info.total == -1 || info.finished == -1 ? null : info.finished + "/" + info.total)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(text))
+                .setSubText(info.total == -1 || info.finished == -1 ? null : info.finished + "/" + info.total)
                 .setProgress(info.total, info.finished, false);
 
         mDownloadingDelay.startForeground();
@@ -476,7 +484,7 @@ public class DownloadService extends Service implements DownloadManager.Download
         private static final int OPS_CANCEL = 1;
         private static final int OPS_START_FOREGROUND = 2;
         private static final long DELAY = 1000; // 1s
-        private final NotificationManager mNotifyManager;
+        private final NotificationManagerCompat mNotifyManager;
         private final NotificationCompat.Builder mBuilder;
         private final int mId;
         private Service mService;
@@ -486,7 +494,7 @@ public class DownloadService extends Service implements DownloadManager.Download
         @Ops
         private int mOps;
 
-        public NotificationDelay(Service service, NotificationManager notifyManager,
+        public NotificationDelay(Service service, NotificationManagerCompat notifyManager,
                                  NotificationCompat.Builder builder, int id) {
             mService = service;
             mNotifyManager = notifyManager;
