@@ -21,13 +21,13 @@
         android:key="declaration"
         android:summary="@string/settings_about_declaration_summary"
         android:title="@string/settings_about_declaration"
-        app:iconSpaceReserved="false"
-        app:enableCopying="true" />
+        app:iconSpaceReserved="false" />
 
     <Preference
         android:key="author"
         android:title="@string/settings_about_author"
-        app:iconSpaceReserved="false" />
+        app:iconSpaceReserved="false"
+        app:enableCopying="true" />
 
     <com.hippo.preference.UrlPreference
         android:key="telegram"
