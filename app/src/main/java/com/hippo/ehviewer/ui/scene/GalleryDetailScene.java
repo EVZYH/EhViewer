@@ -50,6 +50,8 @@ import android.widget.ListView;
 import android.widget.RatingBar;
 import android.widget.TextView;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
@@ -57,7 +59,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.PopupMenu;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
@@ -153,7 +154,6 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
     private static final String KEY_GALLERY_DETAIL = "gallery_detail";
     private static final String KEY_REQUEST_ID = "request_id";
     private static final boolean TRANSITION_ANIMATION_DISABLED = true;
-    private static final int REQUEST_WRITE_STORAGE = 1;
     /*---------------
      View life cycle
      ---------------*/
@@ -266,6 +266,20 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
     @State
     private int mState = STATE_INIT;
     private boolean mModifingFavorites;
+
+    ActivityResultLauncher<String> requestStoragePermissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(),
+            result -> {
+                if (result && mGalleryDetail != null) {
+                    TorrentListDialogHelper helper = new TorrentListDialogHelper();
+                    Dialog dialog = new MaterialAlertDialogBuilder(requireActivity())
+                            .setTitle(R.string.torrents)
+                            .setView(R.layout.dialog_torrent_list)
+                            .setOnDismissListener(helper)
+                            .show();
+                    helper.setDialog(dialog, mGalleryDetail.torrentUrl);
+                }
+            });
 
     @StringRes
     private int getRatingText(float rating) {
@@ -444,7 +458,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
     }
 
     @Override
-    public void onSaveInstanceState(Bundle outState) {
+    public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
 
         if (mAction != null) {
@@ -909,7 +923,6 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         bindPreviews(gd);
     }
 
-    @SuppressWarnings("deprecation")
     private void bindTags(GalleryTagGroup[] tagGroups) {
         Context context = getContext2();
         LayoutInflater inflater = getLayoutInflater2();
@@ -1268,7 +1281,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
             if (mGalleryDetail != null) {
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && ContextCompat.checkSelfPermission(requireActivity(), Manifest.permission.WRITE_EXTERNAL_STORAGE)
                         != PackageManager.PERMISSION_GRANTED) {
-                    ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_WRITE_STORAGE);
+                    requestStoragePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE);
                 } else {
                     TorrentListDialogHelper helper = new TorrentListDialogHelper();
                     Dialog dialog = new MaterialAlertDialogBuilder(context)
@@ -1353,23 +1366,8 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
                 intent.putExtra(GalleryActivity.KEY_GALLERY_INFO, galleryInfo);
                 intent.putExtra(GalleryActivity.KEY_PAGE, index);
                 startActivity(intent);
-                return;
             }
         }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (requestCode == REQUEST_WRITE_STORAGE && grantResults[0] == PackageManager.PERMISSION_GRANTED && mGalleryDetail != null) {
-            TorrentListDialogHelper helper = new TorrentListDialogHelper();
-            Dialog dialog = new MaterialAlertDialogBuilder(requireActivity())
-                    .setTitle(R.string.torrents)
-                    .setView(R.layout.dialog_torrent_list)
-                    .setOnDismissListener(helper)
-                    .show();
-            helper.setDialog(dialog, mGalleryDetail.torrentUrl);
-        }
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     private void showFilterUploaderDialog() {
@@ -1451,19 +1449,14 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
                         return;
                     }
                     int id = menuId.get(which);
-                    switch (id) {
-                        case R.id.vote_up:
-                            voteTag(tag, 1);
-                            break;
-                        case R.id.vote_down:
-                            voteTag(tag, -1);
-                            break;
-                        case R.id.show_definition:
-                            UrlOpener.openUrl(context, EhUrl.getTagDefinitionUrl(tag2), false);
-                            break;
-                        case R.id.add_filter:
-                            showFilterTagDialog(tag);
-                            break;
+                    if (id == R.id.vote_up) {
+                        voteTag(tag, 1);
+                    } else if (id == R.id.vote_down) {
+                        voteTag(tag, -1);
+                    } else if (id == R.id.show_definition) {
+                        UrlOpener.openUrl(context, EhUrl.getTagDefinitionUrl(tag2), false);
+                    } else if (id == R.id.add_filter) {
+                        showFilterTagDialog(tag);
                     }
                 }).show();
     }
@@ -1479,7 +1472,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
                 .setMethod(EhClient.METHOD_VOTE_TAG)
                 .setArgs(mGalleryDetail.apiUid, mGalleryDetail.apiKey, mGalleryDetail.gid, mGalleryDetail.token, tag, vote)
                 .setCallback(new VoteTagListener(context,
-                        activity.getStageId(), getTag(), mGid));
+                        activity.getStageId(), getTag()));
         EhApplication.getEhClient(context).execute(request);
     }
 
@@ -1770,11 +1763,8 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
 
     private static class VoteTagListener extends EhCallback<GalleryDetailScene, VoteTagParser.Result> {
 
-        private final long mGid;
-
-        public VoteTagListener(Context context, int stageId, String sceneTag, long gid) {
+        public VoteTagListener(Context context, int stageId, String sceneTag) {
             super(context, stageId, sceneTag);
-            mGid = gid;
         }
 
         @Override
@@ -1843,7 +1833,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         }
     }
 
-    private class ModifyFavoritesListener extends EhCallback<GalleryDetailScene, Void> {
+    private static class ModifyFavoritesListener extends EhCallback<GalleryDetailScene, Void> {
 
         private final boolean mAddOrRemove;
 
@@ -1889,7 +1879,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
         }
     }
 
-    private class DownloadArchiveListener extends EhCallback<GalleryDetailScene, Void> {
+    private static class DownloadArchiveListener extends EhCallback<GalleryDetailScene, Void> {
 
         public DownloadArchiveListener(Context context, int stageId, String sceneTag) {
             super(context, stageId, sceneTag);
@@ -2100,8 +2090,8 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
             if (null != context && null != mTorrentList && position < mTorrentList.length) {
                 String url = mTorrentList[position].first;
                 String name = mTorrentList[position].second;
-                // Use system download service
-                DownloadManager.Request r = new DownloadManager.Request(Uri.parse(url));
+                // TODO: Don't use buggy system download service
+                DownloadManager.Request r = new DownloadManager.Request(Uri.parse(url.replace("exhentai.org", "ehtracker.org")));
                 r.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,
                         FileUtils.sanitizeFilename(name + ".torrent"));
                 r.allowScanningByMediaScanner();
@@ -2112,6 +2102,7 @@ public class GalleryDetailScene extends BaseScene implements View.OnClickListene
                     try {
                         dm.enqueue(r);
                     } catch (Throwable e) {
+                        e.printStackTrace();
                         ExceptionUtils.throwIfFatal(e);
                     }
                 }
