@@ -18,8 +18,6 @@ package com.hippo.ehviewer.ui.scene;
 
 import android.animation.Animator;
 import android.annotation.SuppressLint;
-import android.content.ClipData;
-import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Typeface;
@@ -71,6 +69,7 @@ import com.hippo.refreshlayout.RefreshLayout;
 import com.hippo.scene.SceneFragment;
 import com.hippo.text.Html;
 import com.hippo.text.URLImageGetter;
+import com.hippo.util.ClipboardUtil;
 import com.hippo.util.DrawableManager;
 import com.hippo.util.ExceptionUtils;
 import com.hippo.util.ReadableTime;
@@ -183,8 +182,8 @@ public final class GalleryCommentsScene extends ToolbarScene
 
     @NonNull
     @Override
-    public View onCreateView3(LayoutInflater inflater,
-                              @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateViewWithToolbar(LayoutInflater inflater,
+                                        @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.scene_gallery_comments, container, false);
         mRecyclerView = (EasyRecyclerView) ViewUtils.$$(view, R.id.recycler_view);
         TextView tip = (TextView) ViewUtils.$$(view, R.id.tip);
@@ -193,7 +192,7 @@ public final class GalleryCommentsScene extends ToolbarScene
         mEditText = (EditText) ViewUtils.$$(mEditPanel, R.id.edit_text);
         mFabLayout = (FabLayout) ViewUtils.$$(view, R.id.fab_layout);
         mFab = (FloatingActionButton) ViewUtils.$$(view, R.id.fab);
-mRefreshLayout = (RefreshLayout) ViewUtils.$$(view, R.id.refresh_layout);
+        mRefreshLayout = (RefreshLayout) ViewUtils.$$(view, R.id.refresh_layout);
 
         mRefreshLayout.setHeaderColorSchemeResources(
                 R.color.loading_indicator_red,
@@ -289,8 +288,8 @@ mRefreshLayout = (RefreshLayout) ViewUtils.$$(view, R.id.refresh_layout);
     }
 
     private void voteComment(long id, int vote) {
-        Context context = getContext2();
-        MainActivity activity = getActivity2();
+        Context context = getContext();
+        MainActivity activity = getMainActivity();
         if (null == context || null == activity) {
             return;
         }
@@ -355,7 +354,7 @@ mRefreshLayout = (RefreshLayout) ViewUtils.$$(view, R.id.refresh_layout);
     }
 
     private void showCommentDialog(int position) {
-        final Context context = getContext2();
+        final Context context = getContext();
         if (context == null || mCommentList == null || mCommentList.comments == null || position >= mCommentList.comments.length || position < 0) {
             return;
         }
@@ -391,8 +390,7 @@ mRefreshLayout = (RefreshLayout) ViewUtils.$$(view, R.id.refresh_layout);
                     }
                     int id = menuId.get(which);
                     if (id == R.id.copy) {
-                        ClipboardManager cmb = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
-                        cmb.setPrimaryClip(ClipData.newPlainText(null, comment.comment));
+                        ClipboardUtil.addTextToClipboard(comment.comment);
                         showTip(R.string.copied_to_clipboard, LENGTH_SHORT);
                     } else if (id == R.id.vote_up) {
                         voteComment(comment.id, 1);
@@ -410,7 +408,7 @@ mRefreshLayout = (RefreshLayout) ViewUtils.$$(view, R.id.refresh_layout);
     }
 
     public boolean onItemClick(EasyRecyclerView parent, View view, int position) {
-        MainActivity activity = getActivity2();
+        MainActivity activity = getMainActivity();
         if (null == activity) {
             return false;
         }
@@ -592,8 +590,8 @@ mRefreshLayout = (RefreshLayout) ViewUtils.$$(view, R.id.refresh_layout);
 
     @Override
     public void onClick(View v) {
-        Context context = getContext2();
-        MainActivity activity = getActivity2();
+        Context context = getContext();
+        MainActivity activity = getMainActivity();
         if (null == context || null == activity || null == mEditText) {
             return;
         }
@@ -931,7 +929,7 @@ mRefreshLayout = (RefreshLayout) ViewUtils.$$(view, R.id.refresh_layout);
         private final LayoutInflater mInflater;
 
         public CommentAdapter() {
-            mInflater = getLayoutInflater2();
+            mInflater = getLayoutInflater();
             AssertUtils.assertNotNull(mInflater);
         }
 
@@ -952,7 +950,7 @@ mRefreshLayout = (RefreshLayout) ViewUtils.$$(view, R.id.refresh_layout);
 
         @Override
         public void onBindViewHolder(@NonNull CommentHolder holder, int position) {
-            Context context = getContext2();
+            Context context = getContext();
             if (context == null || mCommentList == null) {
                 return;
             }
